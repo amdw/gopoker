@@ -6,30 +6,26 @@ import (
 	"time"
 )
 
+type PlayerOutcome struct {
+	Player int
+	Level HandLevel
+	Cards []Card
+}
+
 type HandSorter struct {
-	Hands   []HandLevel
-	Players []int
+	Outcomes []PlayerOutcome
 }
 
 func (hs HandSorter) Len() int {
-	return len(hs.Hands)
+	return len(hs.Outcomes)
 }
 
 func (hs HandSorter) Swap(i, j int) {
-	hs.Hands[i], hs.Hands[j] = hs.Hands[j], hs.Hands[i]
-	hs.Players[i], hs.Players[j] = hs.Players[j], hs.Players[i]
+	hs.Outcomes[i], hs.Outcomes[j] = hs.Outcomes[j], hs.Outcomes[i]
 }
 
 func (hs HandSorter) Less(i, j int) bool {
-	return Beats(hs.Hands[i], hs.Hands[j]) && !Beats(hs.Hands[j], hs.Hands[i])
-}
-
-func NewHandSorter(levels []HandLevel) HandSorter {
-	players := make([]int, len(levels))
-	for i := range players {
-		players[i] = i + 1
-	}
-	return HandSorter{levels, players}
+	return Beats(hs.Outcomes[i].Level, hs.Outcomes[j].Level) && !Beats(hs.Outcomes[j].Level, hs.Outcomes[i].Level)
 }
 
 type Pack struct {
@@ -61,13 +57,14 @@ func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, ha
 	onTable = p.Cards[0:5]
 
 	playerCards = make([][]Card, players)
-	hands := make([]HandLevel, players)
+	outcomes := make([]PlayerOutcome, players)
 	for player := 0; player < players; player++ {
 		playerCards[player] = p.Cards[5+2*player : 7+2*player]
-		hands[player] = Classify(playerCards[player], onTable)
+		level, cards := Classify(playerCards[player], onTable)
+		outcomes[player]=PlayerOutcome{player+1, level, cards}
 	}
 
-	handSorter = NewHandSorter(hands)
+	handSorter = HandSorter{outcomes}
 	sort.Sort(handSorter)
 
 	return onTable, playerCards, handSorter
