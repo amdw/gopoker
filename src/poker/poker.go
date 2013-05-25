@@ -470,11 +470,13 @@ func classifyFlush(mandatory, optional []Card) (hl HandLevel, valid bool) {
 func buildStraights(suits [][]Suit) [][]Suit {
 	result := [][]Suit{{}}
 	for _, suitsForRank := range suits {
+		newResult := [][]Suit{}
 		for _, suit := range suitsForRank {
-			for i, h := range result {
-				result[i] = append(h, suit)
+			for _, h := range result {
+				newResult = append(newResult, append(h, suit))
 			}
 		}
+		result = newResult
 	}
 	return result
 }
