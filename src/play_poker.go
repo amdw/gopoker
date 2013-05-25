@@ -42,7 +42,9 @@ func main() {
 		frequencies[result.Class]++
 	}
 	fmt.Printf("Hand frequencies (total %v):\n", handsToPlay)
-	for class, freq := range frequencies {
+	for c := poker.MAX_HANDCLASS - 1; c >= 0; c-- {
+		class := poker.HandClass(c)
+		freq := frequencies[class]
 		fmt.Printf("%v\t%v (%.2f%%)\n", class, freq, float32(freq)*100.0/float32(handsToPlay))
 	}
 }

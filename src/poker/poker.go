@@ -160,6 +160,7 @@ const (
 	FullHouse
 	FourOfAKind
 	StraightFlush
+	MAX_HANDCLASS // Just a convenience value for iteration
 )
 
 func (hc HandClass) String() string {
@@ -713,8 +714,18 @@ func classifyOnePair(mandatory, optional []Card) (hl HandLevel, ok bool) {
 	return noLevel, false
 }
 
-func classifyHighCard(mandatory, optional []Card) (hl HandLevel, ok bool) {
-	return noLevel, false
+func classifyHighCard(mandatory, optional []Card) HandLevel {
+	hand := make([]Card, 5)
+	copy(hand, mandatory)
+	for i := 0; i < 5 - len(mandatory); i++ {
+		hand[i+len(mandatory)] = optional[i]
+	}
+	sort.Sort(CardSorter{hand,false})
+	handRanks := make([]Rank,5)
+	for i,c := range hand {
+		handRanks[i] = c.Rank
+	}
+	return HandLevel{HighCard, handRanks, hand}
 }
 
 // Classifies a poker hand composed of some mandatory cards (which MUST be in the constructed hand)
@@ -749,8 +760,5 @@ func Classify(mandatory, optional []Card) HandLevel {
 	if result, ok := classifyOnePair(mandatory, optional); ok {
 		return result
 	}
-	if result, ok := classifyHighCard(mandatory, optional); ok {
-		return result
-	}
-	panic(fmt.Sprintf("No classification matched: %q %q", mandatory, optional))
+	return classifyHighCard(mandatory, optional)
 }
