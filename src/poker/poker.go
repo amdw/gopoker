@@ -407,38 +407,44 @@ func classifyFullHouse(mandatory, optional []Card) (hl HandLevel, valid bool) {
 // Build all flushes recursively from a set of ranks for a given suit (basically all size-5 subsets of this set of ranks).
 // The ranks should be passed in descending order; the output will then be in lexicographically descending order (i.e. decreasing strength).
 // TODO: We can optimise this by removing hands missing the mandatory cards in this function.
-func buildFlushes(ranks []Rank) [][]Rank {
-	if len(ranks) < 5 {
-		panic(fmt.Sprintf("Expected at least 5 subsets, found %v", len(ranks)))
-	}
-	if len(ranks) == 5 {
-		return [][]Rank{ranks}
-	}
-	rank := ranks[0]
-	subFlushes := buildFlushes(ranks[1:])
-	// Each of these sub-flushes is a valid flush, and for each one, there are five more with each rank replaced by our rank.
-	result := make([][]Rank, 0)
-	for _, subFlush := range subFlushes {
-		// Replace the weakest rank with our strongest rank first, as that will give the strongest new flush
-		for i := 4; i >= 0; i-- {
-			// Replace subFlush[i] with rank. Our rank is always the highest so it should always go at the front.
-			newFlush := make([]Rank, 5)
-			newFlush[0] = rank
-			j := 1
-			for k := 0; k < 5; k++ {
-				if i == k {
-					continue
-				}
-				newFlush[j] = subFlush[k]
-				j++
-			}
-			fmt.Println("Appending", newFlush)
-			result = append(result, newFlush)
+func buildFlushes(ranks []Rank, indicesToSkip []int) [][]Rank {
+	skipIndex := make([]bool, len(ranks))
+	// We shouldn't skip anything higher than the lowest one we've been asked to skip, otherwise we'll duplicate everything
+	firstNewIndexToSkip := len(ranks) - 1
+	for _, skip := range indicesToSkip {
+		skipIndex[skip] = true
+		if skip <= firstNewIndexToSkip {
+			firstNewIndexToSkip = skip - 1
 		}
 	}
-	for _, subFlush := range subFlushes {
-		fmt.Println("Appending", subFlush)
-		result = append(result, subFlush) // These are weaker so they come at the very end
+
+	if len(ranks)-len(indicesToSkip) == 5 {
+		result := make([]Rank, 5)
+		i := 0
+		for j, r := range ranks {
+			if skipIndex[j] {
+				continue
+			}
+			result[i] = r
+			i++
+		}
+		return [][]Rank{result}
+	}
+
+	result := make([][]Rank, 0)
+	// The weakest indices come at the end of "ranks", so the strongest hands will come from skipping those first
+	for i := firstNewIndexToSkip; i >= 0; i-- {
+		if skipIndex[i] {
+			continue
+		}
+		newIndicesToSkip := make([]int, len(indicesToSkip)+1)
+		copy(newIndicesToSkip, indicesToSkip)
+		newIndicesToSkip[len(indicesToSkip)] = i
+		subResults := buildFlushes(ranks, newIndicesToSkip)
+		for _, subResult := range subResults {
+			fmt.Println("Appending", subResult)
+			result = append(result, subResult)
+		}
 	}
 	fmt.Println("Returning")
 	return result
@@ -460,7 +466,7 @@ func classifyFlush(mandatory, optional []Card) (hl HandLevel, valid bool) {
 			continue // No flushes in this suit
 		}
 		// Need all possible ways to put cards together for this suit, as the best one may not contain all the mandatory cards
-		flushesForThisSuit := buildFlushes(ranks[s])
+		flushesForThisSuit := buildFlushes(ranks[s], []int{})
 		for _, flushRanks := range flushesForThisSuit {
 			hand := make([]Card, 5)
 			for i := 0; i < 5; i++ {

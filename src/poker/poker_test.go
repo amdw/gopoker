@@ -134,7 +134,7 @@ func TestBuildFlushes(t *testing.T) {
 		{Eight, Seven, Five, Four, Two},
 		{Eight, Six, Five, Four, Two},
 		{Seven, Six, Five, Four, Two}}
-	actualFlushes := buildFlushes(ranks)
+	actualFlushes := buildFlushes(ranks, []int{})
 	if len(expectedFlushes) != len(actualFlushes) {
 		t.Fatalf("Expected %v flushes, found %v", len(expectedFlushes), len(actualFlushes))
 	}
