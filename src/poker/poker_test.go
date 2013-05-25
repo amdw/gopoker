@@ -77,9 +77,12 @@ var classTests = []ClassTest{
 	ClassTest{h("6H", "8H"), h("9H", "10H", "2H", "3S", "7C"), HandLevel{Flush, []Rank{Ten, Nine, Eight, Six, Two}, h("10H", "9H", "8H", "6H", "2H")}},
 	ClassTest{h("6S", "8H"), h("9H", "10H", "JH", "QH", "7H"), HandLevel{Straight, []Rank{Ten, Nine, Eight, Seven, Six}, h("10H", "9H", "8H", "7H", "6S")}},
 	ClassTest{h("AS", "3H"), h("2C", "4C", "5D", "KS", "JC"), HandLevel{Straight, []Rank{Five, Four, Three, Two, Ace}, h("AS", "2C", "3H", "4C", "5D")}},
-	ClassTest{h("KS", "8C"), h("10H", "10C", "9H", "7H", "6S"), HandLevel{OnePair, []Rank{Ten, King, Nine, Eight}, h("KS", "8C", "10H", "10C", "9H")}},
 	ClassTest{h("6S", "6D"), h("6C", "KH", "JC", "7H", "2S"), HandLevel{ThreeOfAKind, []Rank{Six, King, Jack}, h("6S", "6D", "6C", "KH", "JC")}},
 	ClassTest{h("6S", "2S"), h("6C", "KH", "JC", "7H", "6D"), HandLevel{ThreeOfAKind, []Rank{Six, King, Two}, h("6S", "6D", "6C", "KH", "2S")}},
+	ClassTest{h("6S", "4D"), h("6D", "QS", "4S", "AH", "3C"), HandLevel{TwoPair, []Rank{Six, Four, Ace}, h("6S", "6D", "4D", "4S", "AH")}},
+	ClassTest{h("6S", "6D"), h("4D", "QS", "4S", "AH", "3C"), HandLevel{TwoPair, []Rank{Six, Four, Ace}, h("6S", "6D", "4D", "4S", "AH")}},
+	ClassTest{h("KS", "8C"), h("10H", "10C", "9H", "7H", "6S"), HandLevel{OnePair, []Rank{Ten, King, Nine, Eight}, h("KS", "8C", "10H", "10C", "9H")}},
+	ClassTest{h("KS", "10H"), h("8C", "10C", "9H", "7H", "6S"), HandLevel{OnePair, []Rank{Ten, King, Nine, Eight}, h("KS", "8C", "10H", "10C", "9H")}},
 }
 
 func levelsEqual(l1 HandLevel, l2 HandLevel) bool {
@@ -117,8 +120,8 @@ func TestClassification(t *testing.T) {
 }
 
 func TestBuildStraights(t *testing.T) {
-	suits := [][]Suit{{Spade},{Club,Heart},{Spade},{Spade},{Spade}}
-	expectedOutput := [][]Suit{{Spade,Club,Spade,Spade,Spade},{Spade,Heart,Spade,Spade,Spade}}
+	suits := [][]Suit{{Spade}, {Club, Heart}, {Spade}, {Spade}, {Spade}}
+	expectedOutput := [][]Suit{{Spade, Club, Spade, Spade, Spade}, {Spade, Heart, Spade, Spade, Spade}}
 	actualOutput := buildStraights(suits)
 	for i := range expectedOutput {
 		for j := range expectedOutput[i] {

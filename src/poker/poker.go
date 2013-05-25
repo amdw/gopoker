@@ -198,10 +198,7 @@ type HandLevel struct {
 }
 
 func (hl HandLevel) String() string {
-	if len(hl.Cards) == 0 {
-		return fmt.Sprintf("%v (%v)", hl.Class, hl.Tiebreaks)
-	}
-	return fmt.Sprintf("%v (%q)", hl.Class, hl.Cards)
+	return fmt.Sprintf("%v[%q] (%q)", hl.Class, hl.Tiebreaks, hl.Cards)
 }
 
 // All the possible sets of ranks which make up straights, starting with the highest-value
@@ -602,6 +599,124 @@ func classifyThreeOfAKind(mandatory, optional []Card) (hl HandLevel, ok bool) {
 	return noLevel, false
 }
 
+// Can we get two pairs out of this set of cards? If so, return the level, otherwise indicate failure.
+func classifyTwoPair(mandatory, optional []Card) (hl HandLevel, ok bool) {
+	suitsByRank := make([][]Suit, 13)
+	mandatorySuitsByRank := make([][]Suit, 13)
+	for _, c := range mandatory {
+		suitsByRank[c.Rank] = append(suitsByRank[c.Rank], c.Suit)
+		mandatorySuitsByRank[c.Rank] = append(mandatorySuitsByRank[c.Rank], c.Suit)
+	}
+	for _, c := range optional {
+		suitsByRank[c.Rank] = append(suitsByRank[c.Rank], c.Suit)
+	}
+	ranksWithPairs := make([]Rank, 0)
+	for r := 12; r >= 0; r-- {
+		if len(suitsByRank[r]) >= 2 {
+			ranksWithPairs = append(ranksWithPairs, Rank(r))
+		}
+	}
+	getBestOtherCard := func(cards []Card, pr1, pr2 Rank) (Card, bool) {
+		for _, c := range cards {
+			if c.Rank != pr1 && c.Rank != pr2 {
+				return c, true
+			}
+		}
+		return Card{}, false
+	}
+	getPairCards := func(rank Rank) []Card {
+		result := []Card{}
+		for _, c := range mandatory {
+			if c.Rank == rank {
+				result = append(result, c)
+			}
+		}
+		for _, c := range optional {
+			if len(result) == 2 {
+				break
+			}
+			if c.Rank == rank {
+				result = append(result, c)
+			}
+		}
+		return result
+	}
+	for i, pairRank1 := range ranksWithPairs {
+		for j := i + 1; j < len(ranksWithPairs); j++ {
+			pairRank2 := ranksWithPairs[j]
+			hand := make([]Card, 5)
+			var bestOtherCard Card
+			if boc, ok := getBestOtherCard(mandatory, pairRank1, pairRank2); ok {
+				bestOtherCard = boc
+			} else if boc, ok := getBestOtherCard(optional, pairRank1, pairRank2); ok {
+				bestOtherCard = boc
+			} else {
+				panic(fmt.Sprintf("Not enough cards: %q %q", mandatory, optional))
+			}
+			copy(hand[0:2], getPairCards(pairRank1))
+			copy(hand[2:4], getPairCards(pairRank2))
+			hand[4] = bestOtherCard
+			if containsAllCards(hand, mandatory) {
+				return HandLevel{TwoPair, []Rank{pairRank1, pairRank2, bestOtherCard.Rank}, hand}, true
+			}
+		}
+	}
+	return noLevel, false
+}
+
+func classifyOnePair(mandatory, optional []Card) (hl HandLevel, ok bool) {
+	ranks := make([]int, 13)
+	for _, c := range mandatory {
+		ranks[c.Rank]++
+	}
+	for _, c := range optional {
+		ranks[c.Rank]++
+	}
+	for r := 12; r >= 0; r-- {
+		if ranks[r] < 2 {
+			continue
+		}
+		hand := []Card{}
+		pairCardsFound := 0
+		for _, c := range mandatory {
+			hand = append(hand, c)
+			if c.Rank == Rank(r) {
+				pairCardsFound--
+			}
+		}
+		for _, c := range optional {
+			if pairCardsFound == 2 {
+				break
+			}
+			if c.Rank == Rank(r) {
+				hand = append(hand, c)
+			}
+		}
+		for _, c := range optional {
+			if len(hand) >= 5 {
+				break
+			}
+			if c.Rank == Rank(r) {
+				continue
+			}
+			hand = append(hand, c)
+		}
+		sort.Sort(CardSorter{hand, false})
+		handRanks := []Rank{Rank(r)}
+		for _, c := range hand {
+			if c.Rank != Rank(r) {
+				handRanks = append(handRanks, c.Rank)
+			}
+		}
+		return HandLevel{OnePair, handRanks, hand}, true
+	}
+	return noLevel, false
+}
+
+func classifyHighCard(mandatory, optional []Card) (hl HandLevel, ok bool) {
+	return noLevel, false
+}
+
 // Classifies a poker hand composed of some mandatory cards (which MUST be in the constructed hand)
 // and some optional cards (which MAY be used to construct the hand).
 // For example, for Texas Hold'em, there will be two mandatory cards and five optional ones.
@@ -628,6 +743,14 @@ func Classify(mandatory, optional []Card) HandLevel {
 	if result, ok := classifyThreeOfAKind(mandatory, optional); ok {
 		return result
 	}
-	return noLevel
-	//return HandLevel{StraightFlush, []Rank{Ace}}
+	if result, ok := classifyTwoPair(mandatory, optional); ok {
+		return result
+	}
+	if result, ok := classifyOnePair(mandatory, optional); ok {
+		return result
+	}
+	if result, ok := classifyHighCard(mandatory, optional); ok {
+		return result
+	}
+	panic(fmt.Sprintf("No classification matched: %q %q", mandatory, optional))
 }

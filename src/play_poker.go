@@ -43,6 +43,6 @@ func main() {
 	}
 	fmt.Printf("Hand frequencies (total %v):\n", handsToPlay)
 	for class, freq := range frequencies {
-		fmt.Printf("%v\t%v\n", class, freq)
+		fmt.Printf("%v\t%v (%.2f%%)\n", class, freq, float32(freq)*100.0/float32(handsToPlay))
 	}
 }
