@@ -3,22 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math/rand"
 	"poker"
-	"time"
 )
 
 // Evaluate a few deals of Texas Hold'em
 func main() {
 	// Initialise pack
-	pack := make([]poker.Card, 52)
-	i := 0
-	for s := 0; s < 4; s++ {
-		for r := 0; r < 13; r++ {
-			pack[i] = poker.Card{poker.Rank(r), poker.Suit(s)}
-			i++
-		}
-	}
+	pack := poker.NewPack()
 
 	var handsToPlay int
 	var verbose bool
@@ -27,19 +18,14 @@ func main() {
 	flag.Parse()
 
 	frequencies := make(map[poker.HandClass]int)
-	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for handCount := 1; handCount <= handsToPlay; handCount++ {
-		// Shuffle (we only care about the first 7 cards)
-		for i := 0; i < 7; i++ {
-			j := randGen.Intn(52-i) + i
-			pack[i], pack[j] = pack[j], pack[i]
-		}
-		result := poker.Classify(pack[0:2], pack[2:7])
+		pack.Shuffle()
+		onTable, playerCards, sortedHands := pack.PlayHoldem(1)
 		if verbose {
-			fmt.Printf("Hand %v: %q\n", handCount, result)
+			fmt.Printf("On table: %v; in hand: %v; outcome: %v\n", onTable, playerCards[0], sortedHands.Hands[0])
 		}
-		frequencies[result.Class]++
+		frequencies[sortedHands.Hands[0].Class]++
 	}
 	fmt.Printf("Hand frequencies (total %v):\n", handsToPlay)
 	for c := poker.MAX_HANDCLASS - 1; c >= 0; c-- {

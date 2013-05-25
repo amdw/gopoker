@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strings"
 )
 
 type Suit int
@@ -199,7 +200,16 @@ type HandLevel struct {
 }
 
 func (hl HandLevel) String() string {
-	return fmt.Sprintf("%v[%q] (%q)", hl.Class, hl.Tiebreaks, hl.Cards)
+	cardStrings := make([]string, len(hl.Cards))
+	for i, c := range hl.Cards {
+		cardStrings[i] = c.String()
+	}
+	rankStrings := make([]string, len(hl.Tiebreaks))
+	for i, r := range hl.Tiebreaks {
+		rankStrings[i] = r.String()
+	}
+
+	return fmt.Sprintf("%v [%v] (%v)", hl.Class, strings.Join(rankStrings, ","), strings.Join(cardStrings, ", "))
 }
 
 // All the possible sets of ranks which make up straights, starting with the highest-value
@@ -280,6 +290,9 @@ func (cs CardSorter) Less(i, j int) bool {
 }
 
 var noLevel = HandLevel{OnePair, []Rank{}, []Card{}}
+
+// TODO: These classification functions should be optimised and refactored to make their methods more consistent and avoid repeated
+// recalculation of the same data (e.g. ranks by suit, suits by rank, best remaining card).
 
 // See if this hand forms a straight flush. If so, return the level indicating that. HandLevel should be ignored if valid is false.
 func classifyStraightFlush(mandatory, optional []Card) (hl HandLevel, valid bool) {
@@ -460,7 +473,7 @@ func classifyFlush(mandatory, optional []Card) (hl HandLevel, valid bool) {
 	return HandLevel{Flush, handRanks, bestFlush}, true
 }
 
-// Recursive function to build all possible straights using a Cartesian product.
+// Build all possible straights using a Cartesian product.
 // Ranks are totally ignored in this function: they are assumed to be known by the caller.
 // Instead, the input is the set of suits available at each rank.
 // Example: {{S},{C,H},{S},{S},{S}} => {{S,C,S,S,S},{S,H,S,S,S}}.
@@ -717,12 +730,12 @@ func classifyOnePair(mandatory, optional []Card) (hl HandLevel, ok bool) {
 func classifyHighCard(mandatory, optional []Card) HandLevel {
 	hand := make([]Card, 5)
 	copy(hand, mandatory)
-	for i := 0; i < 5 - len(mandatory); i++ {
+	for i := 0; i < 5-len(mandatory); i++ {
 		hand[i+len(mandatory)] = optional[i]
 	}
-	sort.Sort(CardSorter{hand,false})
-	handRanks := make([]Rank,5)
-	for i,c := range hand {
+	sort.Sort(CardSorter{hand, false})
+	handRanks := make([]Rank, 5)
+	for i, c := range hand {
 		handRanks[i] = c.Rank
 	}
 	return HandLevel{HighCard, handRanks, hand}
