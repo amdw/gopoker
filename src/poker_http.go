@@ -26,7 +26,7 @@ func formatCards(cards []poker.Card) string {
 
 func playHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	fmt.Fprintf(w, "<html><head><title>A game of poker</title></head><body><h1>A game of poker</h1>")
+	fmt.Fprintf(w, "<html><head><title>A game of Texas Hold'em</title></head><body><h1>A game of Texas Hold'em</h1>")
 
 	players := 5
 	if plstrs, ok := req.Form["players"]; ok && len(plstrs) > 0 {
