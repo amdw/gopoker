@@ -19,7 +19,7 @@ func menu(w http.ResponseWriter, req *http.Request) {
 func formatCards(cards []poker.Card) string {
 	cardStrings := make([]string, len(cards))
 	for i, c := range cards {
-		cardStrings[i] = c.String()
+		cardStrings[i] = c.HTML()
 	}
 	return strings.Join(cardStrings, ", ")
 }

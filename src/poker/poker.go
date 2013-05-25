@@ -34,6 +34,21 @@ func (s Suit) String() string {
 	panic(fmt.Sprintf("Illegal Suit value %s", s))
 }
 
+// Render as suitable HTML Unicode
+func (s Suit) HTML() string {
+	switch s {
+	case Heart:
+		return `<span style="color:red">&#9829;</span>`
+	case Diamond:
+		return `<span style="color:red">&#9830;</span>`
+	case Spade:
+		return "&#9824;"
+	case Club:
+		return "&#9827;"
+	}
+	panic(fmt.Sprintf("Illegal suit value %v", s))
+}
+
 type Rank int
 
 const (
@@ -91,6 +106,10 @@ type Card struct {
 
 func (c Card) String() string {
 	return fmt.Sprint(c.Rank.String(), c.Suit.String())
+}
+
+func (c Card) HTML() string {
+	return fmt.Sprintf("%v%v", c.Rank.String(), c.Suit.HTML())
 }
 
 // Abbreviated constructor function for a card, to save typing.
