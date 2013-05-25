@@ -404,52 +404,6 @@ func classifyFullHouse(mandatory, optional []Card) (hl HandLevel, valid bool) {
 	return noLevel, false
 }
 
-// Build all flushes recursively from a set of ranks for a given suit (basically all size-5 subsets of this set of ranks).
-// The ranks should be passed in descending order; the output will then be in lexicographically descending order (i.e. decreasing strength).
-// TODO: We can optimise this by removing hands missing the mandatory cards in this function.
-func buildFlushes(ranks []Rank, indicesToSkip []int) [][]Rank {
-	skipIndex := make([]bool, len(ranks))
-	// We shouldn't skip anything higher than the lowest one we've been asked to skip, otherwise we'll duplicate everything
-	firstNewIndexToSkip := len(ranks) - 1
-	for _, skip := range indicesToSkip {
-		skipIndex[skip] = true
-		if skip <= firstNewIndexToSkip {
-			firstNewIndexToSkip = skip - 1
-		}
-	}
-
-	if len(ranks)-len(indicesToSkip) == 5 {
-		result := make([]Rank, 5)
-		i := 0
-		for j, r := range ranks {
-			if skipIndex[j] {
-				continue
-			}
-			result[i] = r
-			i++
-		}
-		return [][]Rank{result}
-	}
-
-	result := make([][]Rank, 0)
-	// The weakest indices come at the end of "ranks", so the strongest hands will come from skipping those first
-	for i := firstNewIndexToSkip; i >= 0; i-- {
-		if skipIndex[i] {
-			continue
-		}
-		newIndicesToSkip := make([]int, len(indicesToSkip)+1)
-		copy(newIndicesToSkip, indicesToSkip)
-		newIndicesToSkip[len(indicesToSkip)] = i
-		subResults := buildFlushes(ranks, newIndicesToSkip)
-		for _, subResult := range subResults {
-			fmt.Println("Appending", subResult)
-			result = append(result, subResult)
-		}
-	}
-	fmt.Println("Returning")
-	return result
-}
-
 // Can we make a flush out of these cards? If so, return the level; otherwise, indicate invalid.
 func classifyFlush(mandatory, optional []Card) (hl HandLevel, valid bool) {
 	ranks := make([][]Rank, 4)
@@ -465,17 +419,27 @@ func classifyFlush(mandatory, optional []Card) (hl HandLevel, valid bool) {
 		if len(ranks[s]) < 5 {
 			continue // No flushes in this suit
 		}
-		// Need all possible ways to put cards together for this suit, as the best one may not contain all the mandatory cards
-		flushesForThisSuit := buildFlushes(ranks[s], []int{})
-		for _, flushRanks := range flushesForThisSuit {
-			hand := make([]Card, 5)
-			for i := 0; i < 5; i++ {
-				hand[i] = Card{flushRanks[i], Suit(s)}
+		allCardsForThisSuit := make([]Card, len(ranks[s]))
+		for i, r := range ranks[s] {
+			allCardsForThisSuit[i] = Card{r, Suit(s)}
+		}
+		if !containsAllCards(allCardsForThisSuit, mandatory) {
+			continue // There's a mandatory card not in this suit
+		}
+		flush := make([]Card, 5)
+		copy(flush, mandatory)
+		i := len(mandatory)
+		for _, c := range optional {
+			if i >= 5 {
+				break
 			}
-			if containsAllCards(hand, mandatory) {
-				flushes = append(flushes, hand)
+			if c.Suit == Suit(s) {
+				flush[i] = c
+				i++
 			}
 		}
+		sort.Sort(CardSorter{flush, false})
+		flushes = append(flushes, flush)
 	}
 	if len(flushes) == 0 {
 		return noLevel, false

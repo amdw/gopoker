@@ -74,6 +74,9 @@ var classTests = []ClassTest{
 	ClassTest{h("10S", "10C"), h("10D", "10H", "JD", "QD", "KD", "AD"), HandLevel{FourOfAKind, []Rank{Ten, Ace}, h("10S", "10C", "10D", "10H", "AD")}},
 	ClassTest{h("2S", "2H"), h("3D", "3H", "3C", "QD", "KS"), HandLevel{FullHouse, []Rank{Three, Two}, h("2S", "2H", "3H", "3C", "3D")}},
 	ClassTest{h("2S", "3S"), h("4H", "4D", "4C", "4S", "2D", "2H", "3C"), HandLevel{FullHouse, []Rank{Two, Three}, h("2S", "2D", "2H", "3S", "3C")}},
+	ClassTest{h("6H", "8H"), h("9H", "10H", "2H", "3S", "7C"), HandLevel{Flush, []Rank{Ten, Nine, Eight, Six, Two}, h("10H", "9H", "8H", "6H", "2H")}},
+	ClassTest{h("6S", "8H"), h("9H", "10H", "JH", "QH", "7H"), HandLevel{Straight, []Rank{Ten, Nine, Eight, Seven, Six}, h("10H", "9H", "8H", "7H", "6S")}},
+	ClassTest{h("AS", "3H"), h("2C", "4C", "5D", "KS", "JC"), HandLevel{Straight, []Rank{Five, Four, Three, Two, Ace}, h("AS", "2C", "3H", "4C", "5D")}},
 }
 
 func levelsEqual(l1 HandLevel, l2 HandLevel) bool {
@@ -106,44 +109,6 @@ func TestClassification(t *testing.T) {
 		c := Classify(ct.mandatory, ct.optional)
 		if !levelsEqual(ct.expected, c) {
 			t.Errorf("Expected %q, found %q for %q / %q", ct.expected, c, ct.mandatory, ct.optional)
-		}
-	}
-}
-
-func TestBuildFlushes(t *testing.T) {
-	ranks := []Rank{Nine, Eight, Seven, Six, Five, Four, Two}
-	expectedFlushes := [][]Rank{
-		{Nine, Eight, Seven, Six, Five},
-		{Nine, Eight, Seven, Six, Four},
-		{Nine, Eight, Seven, Six, Two},
-		{Nine, Eight, Seven, Five, Four},
-		{Nine, Eight, Seven, Five, Two},
-		{Nine, Eight, Seven, Four, Two},
-		{Nine, Eight, Six, Five, Four},
-		{Nine, Eight, Six, Five, Two},
-		{Nine, Eight, Six, Four, Two},
-		{Nine, Eight, Five, Four, Two},
-		{Nine, Seven, Six, Five, Four},
-		{Nine, Seven, Six, Five, Two},
-		{Nine, Seven, Six, Four, Two},
-		{Nine, Seven, Five, Four, Two},
-		{Nine, Six, Five, Four, Two},
-		{Eight, Seven, Six, Five, Four},
-		{Eight, Seven, Six, Five, Two},
-		{Eight, Seven, Six, Four, Two},
-		{Eight, Seven, Five, Four, Two},
-		{Eight, Six, Five, Four, Two},
-		{Seven, Six, Five, Four, Two}}
-	actualFlushes := buildFlushes(ranks, []int{})
-	if len(expectedFlushes) != len(actualFlushes) {
-		t.Fatalf("Expected %v flushes, found %v", len(expectedFlushes), len(actualFlushes))
-	}
-	for i := range expectedFlushes {
-		for j := range expectedFlushes[i] {
-			if expectedFlushes[i][j] != actualFlushes[i][j] {
-				t.Errorf("Expected %q at %vth flush, found %q", expectedFlushes[i], i, actualFlushes[i])
-				break
-			}
 		}
 	}
 }
