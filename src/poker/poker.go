@@ -539,6 +539,67 @@ func classifyStraight(mandatory, optional []Card) (hl HandLevel, valid bool) {
 	return HandLevel{Straight, ourRanks, bestStraight}, true
 }
 
+// Can we build three-of-a-kind from this set of cards? If so, return the level, otherwise indicate failure.
+func classifyThreeOfAKind(mandatory, optional []Card) (hl HandLevel, ok bool) {
+	ranks := make([]int, 13)
+	for _, c := range mandatory {
+		ranks[c.Rank]++
+	}
+	for _, c := range optional {
+		ranks[c.Rank]++
+	}
+	for r := 12; r >= 0; r-- {
+		if ranks[r] < 3 {
+			continue
+		}
+		hand := make([]Card, 5)
+		copy(hand, mandatory)
+		missingTripleCards := 3
+		for _, c := range mandatory {
+			if c.Rank == Rank(r) {
+				missingTripleCards--
+			}
+		}
+		i := len(mandatory)
+		for _, c := range optional {
+			if i >= 5 || missingTripleCards == 0 {
+				break
+			}
+			if c.Rank == Rank(r) {
+				hand[i] = c
+				i++
+				missingTripleCards--
+			}
+		}
+		if missingTripleCards > 0 {
+			continue // We can't get all the cards from the triple into our hand
+		}
+		// Fill in with the best available remaining cards
+		for _, c := range optional {
+			if i >= 5 {
+				break
+			}
+			if c.Rank == Rank(r) {
+				continue
+			}
+			hand[i] = c
+			i++
+		}
+		if i < 5 {
+			panic(fmt.Sprintf("Not enough cards: %q %q", mandatory, optional))
+		}
+		sort.Sort(CardSorter{hand, false})
+		handRanks := []Rank{Rank(r)}
+		for _, c := range hand {
+			if c.Rank != Rank(r) {
+				handRanks = append(handRanks, c.Rank)
+			}
+		}
+		return HandLevel{ThreeOfAKind, handRanks, hand}, true
+	}
+	return noLevel, false
+}
+
 // Classifies a poker hand composed of some mandatory cards (which MUST be in the constructed hand)
 // and some optional cards (which MAY be used to construct the hand).
 // For example, for Texas Hold'em, there will be two mandatory cards and five optional ones.
@@ -560,6 +621,9 @@ func Classify(mandatory, optional []Card) HandLevel {
 		return result
 	}
 	if result, ok := classifyStraight(mandatory, optional); ok {
+		return result
+	}
+	if result, ok := classifyThreeOfAKind(mandatory, optional); ok {
 		return result
 	}
 	return noLevel

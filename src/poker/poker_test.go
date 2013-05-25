@@ -77,6 +77,8 @@ var classTests = []ClassTest{
 	ClassTest{h("6H", "8H"), h("9H", "10H", "2H", "3S", "7C"), HandLevel{Flush, []Rank{Ten, Nine, Eight, Six, Two}, h("10H", "9H", "8H", "6H", "2H")}},
 	ClassTest{h("6S", "8H"), h("9H", "10H", "JH", "QH", "7H"), HandLevel{Straight, []Rank{Ten, Nine, Eight, Seven, Six}, h("10H", "9H", "8H", "7H", "6S")}},
 	ClassTest{h("AS", "3H"), h("2C", "4C", "5D", "KS", "JC"), HandLevel{Straight, []Rank{Five, Four, Three, Two, Ace}, h("AS", "2C", "3H", "4C", "5D")}},
+	ClassTest{h("6S", "6D"), h("6C", "KH", "JC", "7H", "2S"), HandLevel{ThreeOfAKind, []Rank{Six, King, Jack}, h("6S", "6D", "6C", "KH", "JC")}},
+	ClassTest{h("6S", "2S"), h("6C", "KH", "JC", "7H", "6D"), HandLevel{ThreeOfAKind, []Rank{Six, King, Two}, h("6S", "6D", "6C", "KH", "2S")}},
 }
 
 func levelsEqual(l1 HandLevel, l2 HandLevel) bool {
