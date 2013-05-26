@@ -8,8 +8,8 @@ import (
 
 type PlayerOutcome struct {
 	Player int
-	Level HandLevel
-	Cards []Card
+	Level  HandLevel
+	Cards  []Card
 }
 
 type HandSorter struct {
@@ -61,7 +61,7 @@ func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, ha
 	for player := 0; player < players; player++ {
 		playerCards[player] = p.Cards[5+2*player : 7+2*player]
 		level, cards := Classify(playerCards[player], onTable)
-		outcomes[player]=PlayerOutcome{player+1, level, cards}
+		outcomes[player] = PlayerOutcome{player + 1, level, cards}
 	}
 
 	handSorter = HandSorter{outcomes}
