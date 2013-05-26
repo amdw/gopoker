@@ -5,8 +5,7 @@ So far, there are the following features:
 * a command-line program play_poker.go which simulates a large number of poker hands and displays the frequencies of the various hand types
 * a program poker_http.go which starts a HTTP server giving a simple interface to the following:
 ** "Play", which simulates a single hand of Texas Hold'em with a given number of players and displays the results (ignoring bidding)
-** "Simulate", which allows you to specify a number of known cards (both on the table and in your hand) and simulates a large number of hands
-   of Texas Hold'em to see how likely various possible outcomes are.
+** "Simulate", which allows you to specify a number of known cards (both on the table and in your hand) and simulates a large number of hands of Texas Hold'em to see how likely various possible outcomes are.
 
 This code was written as an exercise in Go programming and is not intended for any serious purposes whatsoever.
 
