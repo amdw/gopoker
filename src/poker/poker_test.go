@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
-along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 */
 package poker
 
