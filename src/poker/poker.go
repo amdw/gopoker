@@ -4,6 +4,7 @@
 package poker
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -112,12 +113,12 @@ func (c Card) HTML() string {
 	return fmt.Sprintf("%v%v", c.Rank.String(), c.Suit.HTML())
 }
 
-// Abbreviated constructor function for a card, to save typing.
-func C(c string) Card {
+// Construct a card from text, e.g. "QD" for queen of diamonds
+func MakeCard(c string) (Card, error) {
 	re := regexp.MustCompile("^([0123456789AJQK]+)([CDHS])$")
 	match := re.FindStringSubmatch(c)
 	if match == nil {
-		panic(fmt.Sprintf("Illegally formatted card %q", c))
+		return Card{}, errors.New(fmt.Sprintf("Illegally formatted card %q", c))
 	}
 
 	var rank Rank
@@ -162,7 +163,16 @@ func C(c string) Card {
 		suit = Spade
 	}
 
-	return Card{rank, suit}
+	return Card{rank, suit}, nil
+}
+
+// Abbreviated constructor function for a card, to save typing.
+func C(c string) Card {
+	card, err := MakeCard(c)
+	if err != nil {
+		panic(err.Error())
+	}
+	return card
 }
 
 // Classification of a poker hand (e.g. "straight flush"). For any two

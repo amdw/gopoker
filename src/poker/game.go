@@ -53,21 +53,80 @@ func (p *Pack) Shuffle() {
 	}
 }
 
-func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, handSorter HandSorter) {
+// Shuffle the pack, but fix certain cards in place. For use in simulations.
+func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
+	// Remove fixed cards from the pack, shuffle those, and fill them in
+	nonFixedCards := make([]Card, 52-len(yourCards)-len(tableCards))
+
+	indexOf := func(cards []Card, card Card) int {
+		result := -1
+		for i, c := range cards {
+			if c == card {
+				result = i
+				break
+			}
+		}
+		return result
+	}
+
+	i := 0
+	for _, c := range p.Cards {
+		if indexOf(yourCards, c) == -1 && indexOf(tableCards, c) == -1 {
+			nonFixedCards[i] = c
+			i++
+		}
+	}
+	for i = 0; i < len(nonFixedCards); i++ {
+		j := p.randGen.Intn(len(nonFixedCards)-i) + i
+		nonFixedCards[i], nonFixedCards[j] = nonFixedCards[j], nonFixedCards[i]
+	}
+
+	copy(p.Cards[0:len(tableCards)], tableCards)
+
+	// If not all table cards were supplied, fill in the gaps from the non-fixed cards
+	for i = 0; i < 5-len(tableCards); i++ {
+		p.Cards[i+len(tableCards)] = nonFixedCards[i]
+	}
+	copy(p.Cards[5:5+len(yourCards)], yourCards)
+	copy(p.Cards[5+len(yourCards):52], nonFixedCards[i:len(nonFixedCards)])
+}
+
+func (p *Pack) getHoldemOutcomes(players int) (onTable []Card, playerCards [][]Card, outcomes []PlayerOutcome) {
 	onTable = p.Cards[0:5]
 
 	playerCards = make([][]Card, players)
-	outcomes := make([]PlayerOutcome, players)
+	outcomes = make([]PlayerOutcome, players)
 	for player := 0; player < players; player++ {
 		playerCards[player] = p.Cards[5+2*player : 7+2*player]
 		level, cards := Classify(playerCards[player], onTable)
 		outcomes[player] = PlayerOutcome{player + 1, level, cards}
 	}
+	return onTable, playerCards, outcomes
+}
+
+// Play out one hand of Texas Hold'em and return the full outcome (positions of all cards, and outcome for all players).
+func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, handSorter HandSorter) {
+	onTable, playerCards, outcomes := p.getHoldemOutcomes(players)
 
 	handSorter = HandSorter{outcomes}
 	sort.Sort(handSorter)
 
 	return onTable, playerCards, handSorter
+}
+
+// Play out one hand of Texas Hold'em and return whether or not player 1 won, plus player 1's hand level, plus one other player's hand level.
+func (p *Pack) SimulateOneHoldemHand(players int) (won bool, ourLevel, opponentLevel HandLevel) {
+	_, _, outcomes := p.getHoldemOutcomes(players)
+
+	won = true
+	for i := 1; i < len(outcomes); i++ {
+		if Beats(outcomes[i].Level, outcomes[0].Level) {
+			won = false
+			break
+		}
+	}
+
+	return won, outcomes[0].Level, outcomes[1].Level
 }
 
 func NewPack() Pack {
