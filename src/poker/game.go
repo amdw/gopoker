@@ -20,6 +20,7 @@ along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 package poker
 
 import (
+	"fmt"
 	"math/rand"
 	"sort"
 	"time"
@@ -74,6 +75,9 @@ func (p *Pack) Shuffle() {
 
 // Shuffle the pack, but fix certain cards in place. For use in simulations.
 func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
+	if len(tableCards) > 5 {
+		panic(fmt.Sprintf("Maximum of 5 table cards supported, found %v", len(tableCards)))
+	}
 	// Remove fixed cards from the pack, shuffle those, and fill them in
 	nonFixedCards := make([]Card, 52-len(yourCards)-len(tableCards))
 
