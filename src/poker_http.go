@@ -113,9 +113,15 @@ func simulationParams(req *http.Request) (yourCards, tableCards []poker.Card, ha
 	if err != nil {
 		return yourCards, tableCards, handsToPlay, err
 	}
+	if len(yourCards) > 2 {
+		return yourCards, tableCards, handsToPlay, errors.New(fmt.Sprintf("Maximum of 2 player cards allowed, found %v", len(yourCards)))
+	}
 	tableCards, err = extractCards(tableCardsKey)
 	if err != nil {
 		return yourCards, tableCards, handsToPlay, err
+	}
+	if len(tableCards) > 5 {
+		return yourCards, tableCards, handsToPlay, errors.New(fmt.Sprintf("Maximum of 5 table cards allowed, found %v", len(tableCards)))
 	}
 
 	if handsToPlayStrs, ok := req.Form[simCountKey]; ok && len(handsToPlayStrs) > 0 {
@@ -159,7 +165,7 @@ func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 		return strings.Join(text, ",")
 	}
 	fmt.Fprintf(w, `<tr><td><b>Players</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, playersKey, players)
-	fmt.Fprintf(w, `<tr><td><b>Your cards</b></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(yourCards), yourCardsKey, cardText(yourCards))
+	fmt.Fprintf(w, `<tr><td><b>Your cards</b><br/><i>(comma-separated, e.g. 'KD,10H')</i></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(yourCards), yourCardsKey, cardText(yourCards))
 	fmt.Fprintf(w, `<tr><td><b>Table cards</b></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(tableCards), tableCardsKey, cardText(tableCards))
 	fmt.Fprintf(w, `<tr><td><b>Simulations</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, simCountKey, simulator.HandCount)
 	fmt.Fprintf(w, "<tr><td><b>Wins</b></td><td>%v (%.1f%%)", simulator.WinCount, (float32(simulator.WinCount)*100.0)/float32(simulator.HandCount))
