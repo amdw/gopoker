@@ -134,7 +134,7 @@ func (c Card) HTML() string {
 // Construct a card from text, e.g. "QD" for queen of diamonds
 func MakeCard(c string) (Card, error) {
 	re := regexp.MustCompile("^([0123456789AJQK]+)([CDHS])$")
-	match := re.FindStringSubmatch(c)
+	match := re.FindStringSubmatch(strings.ToUpper(c))
 	if match == nil {
 		return Card{}, errors.New(fmt.Sprintf("Illegally formatted card %q", c))
 	}
