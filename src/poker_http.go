@@ -23,6 +23,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"poker"
@@ -141,13 +142,16 @@ func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 
 	players, err := getPlayers(req)
 	if err != nil {
-		fmt.Fprintf(w, "<p>Could not get player count: %v</p></body></html>", err.Error())
+		// Use a template for security as error messages will often contain raw user input
+		t := template.Must(template.New("error").Parse("<p>Could not get player count: {{.}}</p></body></html>"))
+		t.Execute(w, err.Error())
 		return
 	}
 
 	yourCards, tableCards, handsToPlay, err := simulationParams(req)
 	if err != nil {
-		fmt.Fprintf(w, "<p>Could not get simulation parameters: %v</p></body></html>", err.Error())
+		t := template.Must(template.New("error").Parse("<p>Could not get simulation parameters: {{.}}</p></body></html>"))
+		t.Execute(w, err.Error())
 		return
 	}
 
