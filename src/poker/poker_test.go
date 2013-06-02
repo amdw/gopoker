@@ -201,3 +201,21 @@ func TestFixedShuffle(t *testing.T) {
 		}
 	}
 }
+
+func TestSorting(t *testing.T) {
+	cards := h("AS", "JC", "QD", "3C", "4S", "10C")
+
+	sort.Sort(CardSorter{cards, false})
+	for i, c := range h("AS", "QD", "JC", "10C", "4S", "3C") {
+		if cards[i] != c {
+			t.Errorf("Expected %v at position %v of ace-high list, found %v", c, i, cards[i])
+		}
+	}
+
+	sort.Sort(CardSorter{cards, true})
+	for i, c := range h("QD", "JC", "10C", "4S", "3C", "AS") {
+		if cards[i] != c {
+			t.Errorf("Expected %v at position %v of ace-low list, found %v", c, i, cards[i])
+		}
+	}
+}

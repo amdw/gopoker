@@ -316,14 +316,15 @@ func (cs CardSorter) Swap(i, j int) {
 	cs.Cards[i], cs.Cards[j] = cs.Cards[j], cs.Cards[i]
 }
 
+// Cards are to be sorted in descending order of rank, so Less(c1,c2) is true iff c1 has a HIGHER rank than c2
 func (cs CardSorter) Less(i, j int) bool {
 	if cs.Cards[i].Rank != cs.Cards[j].Rank {
 		if cs.AceLow {
 			if cs.Cards[i].Rank == Ace {
-				return true
+				return false
 			}
 			if cs.Cards[j].Rank == Ace {
-				return false
+				return true
 			}
 		}
 		return cs.Cards[i].Rank > cs.Cards[j].Rank
