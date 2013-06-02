@@ -336,7 +336,9 @@ func (cs CardSorter) Less(i, j int) bool {
 var noLevel = HandLevel{OnePair, []Rank{}}
 
 // TODO: These classification functions should be optimised and refactored to make their methods more consistent and avoid repeated
-// recalculation of the same data (e.g. ranks by suit, suits by rank, best remaining card).
+// recalculation of the same data (e.g. ranks by suit, suits by rank, best remaining card). It may also be helpful to refactor to
+// change the functions to take exactly five mandatory cards, then generate all possible hands (e.g. 5C3 = 10 for Texas Holdem),
+// rank each one using these functions, and then just pick the highest.
 
 // See if this hand forms a straight flush. If so, return the level indicating that. HandLevel should be ignored if valid is false.
 func classifyStraightFlush(mandatory, optional []Card) (hl HandLevel, cards []Card, valid bool) {
