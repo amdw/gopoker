@@ -40,6 +40,10 @@ func TestCardBasics(t *testing.T) {
 			}
 		}
 	}
+	// Test lower-case conversion
+	if C("JS") != C("js") {
+		t.Errorf("Should be able to accept lower-case cards, but found %v vs %v", C("JS"), C("js"))
+	}
 }
 
 type LevelTest struct {

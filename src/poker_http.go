@@ -23,6 +23,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"poker"
@@ -64,9 +65,13 @@ func playHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<html><head><title>A game of Texas Hold'em</title></head><body><h1>A game of Texas Hold'em</h1>")
 	players, err := getPlayers(req)
 	if err != nil {
-		fmt.Fprintf(w, "<p>Could not parse players as integer: %v</p></body></html>", err.Error())
+		// Use template to sanitise user input for security
+		t := template.Must(template.New("error").Parse("<p>Could not parse players as integer: {{.}}</p></body></html>"))
+		t.Execute(w, err.Error())
 		return
 	}
+
+	fmt.Fprintf(w, `<form method="get">Players: <input type="text" name="%v" value="%v"/><input type="submit" value="Rerun"/></form>`, playersKey, players)
 
 	pack := poker.NewPack()
 	pack.Shuffle()
@@ -141,20 +146,23 @@ func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 
 	players, err := getPlayers(req)
 	if err != nil {
-		fmt.Fprintf(w, "<p>Could not get player count: %v</p></body></html>", err.Error())
+		// Use a template for security as error messages will often contain raw user input
+		t := template.Must(template.New("error").Parse("<p>Could not get player count: {{.}}</p></body></html>"))
+		t.Execute(w, err.Error())
 		return
 	}
 
 	yourCards, tableCards, handsToPlay, err := simulationParams(req)
 	if err != nil {
-		fmt.Fprintf(w, "<p>Could not get simulation parameters: %v</p></body></html>", err.Error())
+		t := template.Must(template.New("error").Parse("<p>Could not get simulation parameters: {{.}}</p></body></html>"))
+		t.Execute(w, err.Error())
 		return
 	}
 
 	simulator := poker.Simulator{}
 	simulator.SimulateHoldem(yourCards, tableCards, players, handsToPlay)
 	fmt.Fprintf(w, "<h2>Simulation outcome</h2>")
-	fmt.Fprintf(w, `<form method="GET">`)
+	fmt.Fprintf(w, `<form method="get">`)
 	fmt.Fprintf(w, `<p><input type="submit" value="Rerun"/> <a href="/simulate">Reset</a></p>`)
 	fmt.Fprintf(w, "<table>")
 	cardText := func(cards []poker.Card) string {
