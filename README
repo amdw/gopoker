@@ -7,6 +7,11 @@ So far, there are the following features:
 ** "Play", which simulates a single hand of Texas Hold'em with a given number of players and displays the results (ignoring bidding)
 ** "Simulate", which allows you to specify a number of known cards (both on the table and in your hand) and simulates a large number of hands of Texas Hold'em to see how likely various possible outcomes are.
 
+An easy way to download and run this code is to clone the repository, add the resulting gopoker directory to your GOPATH, cd into gopoker/src, and run one of the following commands:
+
+go run play_poker.go
+go run poker_http.go
+
 This code was written as an exercise in Go programming and is not intended for any serious purposes whatsoever.
 
 All files are Copyright 2013 Andrew Medworth and are released as free software under the GNU Affero GPL. See LICENSE file for more details.
