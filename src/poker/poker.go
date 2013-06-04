@@ -254,7 +254,7 @@ func (hl HandLevel) String() string {
 }
 
 // All the possible sets of ranks which make up straights, starting with the highest-value
-var straights = make([][]Rank, 10)
+var straights = make([][]Rank, 0)
 var ranksDesc = []Rank{Ace, King, Queen, Jack, Ten, Nine, Eight, Seven, Six, Five, Four, Three, Two}
 var allSuits = []Suit{Club, Diamond, Heart, Spade}
 
@@ -336,488 +336,301 @@ func (cs CardSorter) Less(i, j int) bool {
 var noLevel = HandLevel{OnePair, []Rank{}}
 
 // TODO: These classification functions should be optimised and refactored to make their methods more consistent and avoid repeated
-// recalculation of the same data (e.g. ranks by suit, suits by rank, best remaining card). It may also be helpful to refactor to
-// change the functions to take exactly five mandatory cards, then generate all possible hands (e.g. 5C3 = 10 for Texas Holdem),
-// rank each one using these functions, and then just pick the highest.
+// recalculation of the same data (e.g. ranks by suit, suits by rank, best remaining card).
 
 // See if this hand forms a straight flush. If so, return the level indicating that. HandLevel should be ignored if valid is false.
-func classifyStraightFlush(mandatory, optional []Card) (hl HandLevel, cards []Card, valid bool) {
-	// Mash all the cards together and see if there is a straight flush which contains the mandatory cards
-	valuesBySuit := make([][]int, 4)
-	for _, s := range allSuits {
-		valuesBySuit[s] = make([]int, 13)
+func classifyStraightFlush(cards []Card) (hl HandLevel, ok bool) {
+	firstSuit := cards[0].Suit
+	ranksForFirstSuit := make([]int, 13)
+	for _, c := range cards {
+		if c.Suit != firstSuit {
+			return noLevel, false // Not all the same suit -> no straight flush
+		}
+		ranksForFirstSuit[c.Rank]++
 	}
-	for _, c := range mandatory {
-		valuesBySuit[c.Suit][c.Rank]++
-	}
-	for _, c := range optional {
-		valuesBySuit[c.Suit][c.Rank]++
-	}
-	straightFlushes := make([][]Card, 0)
-	for _, s := range allSuits {
-		for _, straight := range straights {
-			foundStraightFlush := true
-			for _, r := range straight {
-				if valuesBySuit[s][r] == 0 {
-					foundStraightFlush = false
-					break
-				}
-			}
-			if foundStraightFlush {
-				sf := make([]Card, 5)
-				for i, r := range straight {
-					sf[i] = Card{r, s}
-				}
-				if containsAllCards(sf, mandatory) {
-					straightFlushes = append(straightFlushes, sf)
-					break // This is the best one for this suit
-				}
+
+	for _, straight := range straights {
+		foundStraightFlush := true
+		for _, r := range straight {
+			if ranksForFirstSuit[r] == 0 {
+				foundStraightFlush = false
+				break
 			}
 		}
-	}
-	if len(straightFlushes) == 0 {
-		return noLevel, []Card{}, false
-	}
-	bestStraightFlush := straightFlushes[0]
-	for i := 1; i < len(straightFlushes); i++ {
-		if straightFlushes[i][0].Rank > bestStraightFlush[0].Rank {
-			bestStraightFlush = straightFlushes[i]
+		if foundStraightFlush {
+			return HandLevel{StraightFlush, straight[0:1]}, true
 		}
 	}
-	return HandLevel{StraightFlush, []Rank{bestStraightFlush[0].Rank}}, bestStraightFlush, true
+	return noLevel, false
 }
 
 // See if "four of a kind" can be formed from this set of cards. If so, return the level of the best such hand; if not, indicate invalid.
-func classifyFourOfAKind(mandatory, optional []Card) (hl HandLevel, cards []Card, valid bool) {
-	// Again, just mash everything together and find the hands matching the pattern which contain the mandatory cards
-	ranks := make([]int, 13)
-	for _, c := range mandatory {
-		ranks[c.Rank]++
-	}
-	for _, c := range optional {
-		ranks[c.Rank]++
+func classifyFourOfAKind(cards []Card) (hl HandLevel, ok bool) {
+	countsByRank := make([]int, 13)
+	for _, c := range cards {
+		countsByRank[c.Rank]++
 	}
 	for _, r := range ranksDesc {
-		if ranks[r] < 4 {
+		if countsByRank[r] < 4 {
 			continue
 		}
-		hand := make([]Card, 5)
-		for _, i := range allSuits {
-			hand[i] = Card{r, i}
+		// Since the cards are sorted by rank, the other one will either be the first or the last
+		otherRank := cards[0].Rank
+		if otherRank == r {
+			otherRank = cards[4].Rank
 		}
-		// If the mandatory cards hold something other than this rank, use the best of these;
-		// otherwise, use the best of the other ranks from the optional set.
-		findMissingCard := func(candidates []Card) (Card, bool) {
-			for _, candidate := range candidates {
-				if candidate.Rank == r {
-					continue
-				}
-				return candidate, true
-			}
-			return Card{}, false
-		}
-		for _, candidateList := range [][]Card{mandatory, optional} {
-			if mc, ok := findMissingCard(candidateList); ok {
-				hand[4] = mc
-				if containsAllCards(hand, mandatory) {
-					return HandLevel{FourOfAKind, []Rank{r, mc.Rank}}, hand, true
-				}
-			}
-		}
+		return HandLevel{FourOfAKind, []Rank{r, otherRank}}, true
 	}
-	return noLevel, []Card{}, false
+	return noLevel, false
 }
 
 // See if a full house can be composed from this set of cards. If so, return the level of the best such hand; otherwise indicate invalid.
-func classifyFullHouse(mandatory, optional []Card) (hl HandLevel, cards []Card, valid bool) {
-	// Once again, we find all full houses from the full set of cards, rejecting those which don't contain all the mandatory cards
-	ranks := make([][]Suit, 13)
-	for _, c := range mandatory {
-		ranks[c.Rank] = append(ranks[c.Rank], c.Suit)
+func classifyFullHouse(cards []Card) (hl HandLevel, ok bool) {
+	countsByRank := make([]int, 13)
+	for _, c := range cards {
+		countsByRank[c.Rank]++
 	}
-	for _, c := range optional {
-		ranks[c.Rank] = append(ranks[c.Rank], c.Suit)
-	}
-	for _, overRank := range ranksDesc {
-		if len(ranks[overRank]) < 3 {
+	overUnderRanks := make([]Rank, 2)
+	for _, r := range ranksDesc {
+		switch countsByRank[r] {
+		case 3:
+			overUnderRanks[0] = r
+		case 2:
+			overUnderRanks[1] = r
+		case 0:
 			continue
-		}
-		for _, underRank := range ranksDesc {
-			if underRank == overRank || len(ranks[underRank]) < 2 {
-				continue
-			}
-			hand := make([]Card, 5)
-			for i := 0; i < 3; i++ {
-				hand[i] = Card{overRank, ranks[overRank][i]}
-			}
-			for i := 0; i < 2; i++ {
-				hand[i+3] = Card{underRank, ranks[underRank][i]}
-			}
-			if containsAllCards(hand, mandatory) {
-				return HandLevel{FullHouse, []Rank{overRank, underRank}}, hand, true
-			}
+		default:
+			return noLevel, false
 		}
 	}
-	return noLevel, []Card{}, false
+	return HandLevel{FullHouse, overUnderRanks}, true
 }
 
 // Can we make a flush out of these cards? If so, return the level; otherwise, indicate invalid.
-func classifyFlush(mandatory, optional []Card) (hl HandLevel, cards []Card, valid bool) {
-	ranks := make([][]Rank, 4)
-	for _, c := range mandatory {
-		ranks[c.Suit] = append(ranks[c.Suit], c.Rank)
-	}
-	for _, c := range optional {
-		ranks[c.Suit] = append(ranks[c.Suit], c.Rank)
+func classifyFlush(cards []Card) (hl HandLevel, ok bool) {
+	countsBySuit := make([]int, 4)
+	for _, c := range cards {
+		countsBySuit[c.Suit]++
 	}
 
-	flushes := make([][]Card, 0)
-	for _, s := range allSuits {
-		if len(ranks[s]) < 5 {
-			continue // No flushes in this suit
-		}
-		allCardsForThisSuit := make([]Card, len(ranks[s]))
-		for i, r := range ranks[s] {
-			allCardsForThisSuit[i] = Card{r, s}
-		}
-		if !containsAllCards(allCardsForThisSuit, mandatory) {
-			continue // There's a mandatory card not in this suit
-		}
-		flush := make([]Card, 5)
-		copy(flush, mandatory)
-		i := len(mandatory)
-		for _, c := range optional {
-			if i >= 5 {
-				break
+	for _, count := range countsBySuit {
+		switch count {
+		case 5:
+			ranks := make([]Rank, len(cards))
+			for i, c := range cards {
+				ranks[i] = c.Rank
 			}
-			if c.Suit == s {
-				flush[i] = c
-				i++
-			}
-		}
-		sort.Sort(CardSorter{flush, false})
-		flushes = append(flushes, flush)
-	}
-	if len(flushes) == 0 {
-		return noLevel, []Card{}, false
-	}
-	bestFlush := flushes[0]
-	for i := 1; i < len(flushes); i++ {
-		for j := 0; j < 5; j++ {
-			if flushes[i][j].Rank == bestFlush[j].Rank {
-				continue
-			}
-			if flushes[i][j].Rank > bestFlush[j].Rank {
-				bestFlush = flushes[i]
-			}
+			return HandLevel{Flush, ranks}, true
+		case 0:
+			continue
+		default:
+			return noLevel, false
 		}
 	}
-	handRanks := make([]Rank, 5)
-	for i, c := range bestFlush {
-		handRanks[i] = c.Rank
-	}
-	return HandLevel{Flush, handRanks}, bestFlush, true
-}
-
-// Build all possible straights using a Cartesian product.
-// Ranks are totally ignored in this function: they are assumed to be known by the caller.
-// Instead, the input is the set of suits available at each rank.
-// Example: {{S},{C,H},{S},{S},{S}} => {{S,C,S,S,S},{S,H,S,S,S}}.
-// TODO: Optimise through earlier filtering of hands not containing mandatory cards?
-func buildStraights(suits [][]Suit) [][]Suit {
-	result := [][]Suit{{}}
-	for _, suitsForRank := range suits {
-		newResult := [][]Suit{}
-		for _, suit := range suitsForRank {
-			for _, h := range result {
-				newResult = append(newResult, append(h, suit))
-			}
-		}
-		result = newResult
-	}
-	return result
+	return noLevel, false // Should never hit this
 }
 
 // Can we make a straight out of these cards? If so, return the level; otherwise, indicate invalid.
-func classifyStraight(mandatory, optional []Card) (hl HandLevel, cards []Card, valid bool) {
-	suits := make([][]Suit, 13)
-	for _, c := range mandatory {
-		suits[c.Rank] = append(suits[c.Rank], c.Suit)
+func classifyStraight(cards []Card) (hl HandLevel, ok bool) {
+	countsByRank := make([]int, 13)
+	for _, c := range cards {
+		countsByRank[c.Rank]++
 	}
-	for _, c := range optional {
-		suits[c.Rank] = append(suits[c.Rank], c.Suit)
-	}
-
-	ourStraights := make([][]Card, 0)
-	for _, possStraight := range straights {
-		realised := true
-		for _, rank := range possStraight {
-			if len(suits[rank]) == 0 {
-				realised = false
+	for _, straight := range straights {
+		straightRealised := true
+		for _, r := range straight {
+			if countsByRank[r] != 1 {
+				straightRealised = false
 				break
 			}
 		}
-		if !realised {
-			continue
-		}
-		suitsForThisStraight := make([][]Suit, 5)
-		for i, rank := range possStraight {
-			suitsForThisStraight[i] = suits[rank]
-		}
-		suitSets := buildStraights(suitsForThisStraight)
-		for _, suitSet := range suitSets {
-			hand := make([]Card, 5)
-			for i, suit := range suitSet {
-				hand[i] = Card{possStraight[i], suit}
-			}
-			if containsAllCards(hand, mandatory) {
-				ourStraights = append(ourStraights, hand)
-			}
+		if straightRealised {
+			return HandLevel{Straight, straight}, true
 		}
 	}
-
-	if len(ourStraights) == 0 {
-		return noLevel, []Card{}, false
-	}
-	bestStraight := ourStraights[0]
-	for i := 1; i < len(ourStraights); i++ {
-		for j := 0; j < 5; j++ {
-			if ourStraights[i][j].Rank == bestStraight[j].Rank {
-				continue
-			}
-			if ourStraights[i][j].Rank > bestStraight[j].Rank {
-				bestStraight = ourStraights[i]
-				break
-			}
-		}
-	}
-	ourRanks := make([]Rank, 5)
-	for i, c := range bestStraight {
-		ourRanks[i] = c.Rank
-	}
-	return HandLevel{Straight, ourRanks}, bestStraight, true
+	return noLevel, false
 }
 
 // Can we build three-of-a-kind from this set of cards? If so, return the level, otherwise indicate failure.
-func classifyThreeOfAKind(mandatory, optional []Card) (hl HandLevel, cards []Card, ok bool) {
-	ranks := make([]int, 13)
-	for _, c := range mandatory {
-		ranks[c.Rank]++
-	}
-	for _, c := range optional {
-		ranks[c.Rank]++
+func classifyThreeOfAKind(cards []Card) (hl HandLevel, ok bool) {
+	countsByRank := make([]int, 13)
+	for _, c := range cards {
+		countsByRank[c.Rank]++
 	}
 	for _, r := range ranksDesc {
-		if ranks[r] < 3 {
+		if countsByRank[r] < 3 {
 			continue
 		}
-		hand := make([]Card, 5)
-		copy(hand, mandatory)
-		missingTripleCards := 3
-		for _, c := range mandatory {
-			if c.Rank == r {
-				missingTripleCards--
-			}
-		}
-		i := len(mandatory)
-		for _, c := range optional {
-			if i >= 5 || missingTripleCards == 0 {
-				break
-			}
-			if c.Rank == r {
-				hand[i] = c
-				i++
-				missingTripleCards--
-			}
-		}
-		if missingTripleCards > 0 {
-			continue // We can't get all the cards from the triple into our hand
-		}
-		// Fill in with the best available remaining cards
-		for _, c := range optional {
-			if i >= 5 {
-				break
-			}
-			if c.Rank == r {
-				continue
-			}
-			hand[i] = c
-			i++
-		}
-		if i < 5 {
-			panic(fmt.Sprintf("Not enough cards: %q %q", mandatory, optional))
-		}
-		sort.Sort(CardSorter{hand, false})
 		handRanks := []Rank{r}
-		for _, c := range hand {
+		for _, c := range cards {
 			if c.Rank != r {
 				handRanks = append(handRanks, c.Rank)
 			}
 		}
-		return HandLevel{ThreeOfAKind, handRanks}, hand, true
+		return HandLevel{ThreeOfAKind, handRanks}, true
 	}
-	return noLevel, []Card{}, false
+	return noLevel, false
 }
 
 // Can we get two pairs out of this set of cards? If so, return the level, otherwise indicate failure.
-func classifyTwoPair(mandatory, optional []Card) (hl HandLevel, cards []Card, ok bool) {
-	suitsByRank := make([][]Suit, 13)
-	mandatorySuitsByRank := make([][]Suit, 13)
-	for _, c := range mandatory {
-		suitsByRank[c.Rank] = append(suitsByRank[c.Rank], c.Suit)
-		mandatorySuitsByRank[c.Rank] = append(mandatorySuitsByRank[c.Rank], c.Suit)
+func classifyTwoPair(cards []Card) (hl HandLevel, ok bool) {
+	countsByRank := make([]int, 13)
+	for _, c := range cards {
+		countsByRank[c.Rank]++
 	}
-	for _, c := range optional {
-		suitsByRank[c.Rank] = append(suitsByRank[c.Rank], c.Suit)
-	}
-	ranksWithPairs := make([]Rank, 0)
+	handRanks := make([]Rank, 3)
+	found := make([]bool, 3)
 	for _, r := range ranksDesc {
-		if len(suitsByRank[r]) >= 2 {
-			ranksWithPairs = append(ranksWithPairs, r)
-		}
-	}
-	getBestOtherCard := func(cards []Card, pr1, pr2 Rank) (Card, bool) {
-		for _, c := range cards {
-			if c.Rank != pr1 && c.Rank != pr2 {
-				return c, true
+		switch countsByRank[r] {
+		case 1:
+			if found[2] {
+				return noLevel, false // We have exactly one of more than one rank -> can't be two pair
 			}
-		}
-		return Card{}, false
-	}
-	getPairCards := func(rank Rank) []Card {
-		result := []Card{}
-		for _, c := range mandatory {
-			if c.Rank == rank {
-				result = append(result, c)
-			}
-		}
-		for _, c := range optional {
-			if len(result) == 2 {
-				break
-			}
-			if c.Rank == rank {
-				result = append(result, c)
-			}
-		}
-		return result
-	}
-	for i, pairRank1 := range ranksWithPairs {
-		for j := i + 1; j < len(ranksWithPairs); j++ {
-			pairRank2 := ranksWithPairs[j]
-			hand := make([]Card, 5)
-			var bestOtherCard Card
-			if boc, ok := getBestOtherCard(mandatory, pairRank1, pairRank2); ok {
-				bestOtherCard = boc
-			} else if boc, ok := getBestOtherCard(optional, pairRank1, pairRank2); ok {
-				bestOtherCard = boc
+			handRanks[2] = r
+			found[2] = true
+		case 2:
+			if found[0] {
+				handRanks[1] = r
+				found[1] = true
 			} else {
-				panic(fmt.Sprintf("Not enough cards: %q %q", mandatory, optional))
+				handRanks[0] = r
+				found[0] = true
 			}
-			copy(hand[0:2], getPairCards(pairRank1))
-			copy(hand[2:4], getPairCards(pairRank2))
-			hand[4] = bestOtherCard
-			if containsAllCards(hand, mandatory) {
-				return HandLevel{TwoPair, []Rank{pairRank1, pairRank2, bestOtherCard.Rank}}, hand, true
-			}
+		case 0:
+			continue
+		default:
+			return noLevel, false
 		}
 	}
-	return noLevel, []Card{}, false
+	return HandLevel{TwoPair, handRanks}, true
 }
 
-func classifyOnePair(mandatory, optional []Card) (hl HandLevel, cards []Card, ok bool) {
-	ranks := make([]int, 13)
-	for _, c := range mandatory {
-		ranks[c.Rank]++
-	}
-	for _, c := range optional {
-		ranks[c.Rank]++
+// Can we get a one-pair out of this set of cards? If so, return the level, otherwise indicate failure.
+func classifyOnePair(cards []Card) (hl HandLevel, ok bool) {
+	countsByRank := make([]int, 13)
+	for _, c := range cards {
+		countsByRank[c.Rank]++
 	}
 	for _, r := range ranksDesc {
-		if ranks[r] < 2 {
-			continue
+		if countsByRank[r] == 2 {
+			handRanks := []Rank{r}
+			for _, c := range cards {
+				if c.Rank != r {
+					handRanks = append(handRanks, c.Rank)
+				}
+			}
+			return HandLevel{OnePair, handRanks}, true
 		}
-		hand := []Card{}
-		pairCardsFound := 0
-		for _, c := range mandatory {
-			hand = append(hand, c)
-			if c.Rank == r {
-				pairCardsFound--
-			}
-		}
-		for _, c := range optional {
-			if pairCardsFound == 2 {
-				break
-			}
-			if c.Rank == r {
-				hand = append(hand, c)
-			}
-		}
-		for _, c := range optional {
-			if len(hand) >= 5 {
-				break
-			}
-			if c.Rank == r {
-				continue
-			}
-			hand = append(hand, c)
-		}
-		sort.Sort(CardSorter{hand, false})
-		handRanks := []Rank{r}
-		for _, c := range hand {
-			if c.Rank != r {
-				handRanks = append(handRanks, c.Rank)
-			}
-		}
-		return HandLevel{OnePair, handRanks}, hand, true
 	}
-	return noLevel, []Card{}, false
+	return noLevel, false
 }
 
-func classifyHighCard(mandatory, optional []Card) (HandLevel, []Card) {
-	hand := make([]Card, 5)
-	copy(hand, mandatory)
-	for i := 0; i < 5-len(mandatory); i++ {
-		hand[i+len(mandatory)] = optional[i]
-	}
-	sort.Sort(CardSorter{hand, false})
-	handRanks := make([]Rank, 5)
-	for i, c := range hand {
+// If we have to call this function, we can't have anything better than a high-card, so rank it.
+func classifyHighCard(cards []Card) HandLevel {
+	handRanks := make([]Rank, len(cards))
+	for i, c := range cards {
 		handRanks[i] = c.Rank
 	}
-	return HandLevel{HighCard, handRanks}, hand
+	return HandLevel{HighCard, handRanks}
+}
+
+// Classify a hand of five cards
+func classifyHand(cards []Card) HandLevel {
+	if len(cards) != 5 {
+		panic(fmt.Sprintf("Expected exactly five cards, found %v", len(cards)))
+	}
+	// First sort the cards, as this makes some of the functions easier to write
+	sort.Sort(CardSorter{cards, false})
+
+	if result, ok := classifyStraightFlush(cards); ok {
+		return result
+	}
+	if result, ok := classifyFourOfAKind(cards); ok {
+		return result
+	}
+	if result, ok := classifyFullHouse(cards); ok {
+		return result
+	}
+	if result, ok := classifyFlush(cards); ok {
+		return result
+	}
+	if result, ok := classifyStraight(cards); ok {
+		return result
+	}
+	if result, ok := classifyThreeOfAKind(cards); ok {
+		return result
+	}
+	if result, ok := classifyTwoPair(cards); ok {
+		return result
+	}
+	if result, ok := classifyOnePair(cards); ok {
+		return result
+	}
+	return classifyHighCard(cards)
+}
+
+// A sub-function with an extra argument startSkippingAt to avoid duplication of results
+func allChoicesSkipping(cards []Card, num, startSkippingAt int) [][]Card {
+	if num >= len(cards) {
+		return [][]Card{cards}
+	}
+
+	result := [][]Card{}
+
+	// Call the function recursively with every possible one-smaller combination, starting skipping at the appropriate location.
+	for i := startSkippingAt; i < len(cards); i++ {
+		nextSmaller := make([]Card, len(cards)-1)
+		j := 0
+		for k, c := range cards {
+			if k == i {
+				continue
+			}
+			nextSmaller[j] = c
+			j++
+		}
+		subChoices := allChoicesSkipping(nextSmaller, num, i)
+		if len(subChoices) > 0 {
+			newResult := make([][]Card, len(result)+len(subChoices))
+			copy(newResult[0:len(result)], result)
+			copy(newResult[len(result):], subChoices)
+			result = newResult
+		}
+	}
+
+	return result
+}
+
+// All ways to choose n cards from a set
+func allChoices(cards []Card, num int) [][]Card {
+	return allChoicesSkipping(cards, num, 0)
 }
 
 // Classifies a poker hand composed of some mandatory cards (which MUST be in the constructed hand)
 // and some optional cards (which MAY be used to construct the hand).
 // For example, for Texas Hold'em, there will be two mandatory cards and five optional ones.
 func Classify(mandatory, optional []Card) (HandLevel, []Card) {
-	// First sort the cards, as this makes some of the functions easier to write
-	sort.Sort(CardSorter{mandatory, false})
-	sort.Sort(CardSorter{optional, false})
+	// Construct all possible hands and find the best one
+	allPossibleOptionals := allChoices(optional, 5-len(mandatory))
 
-	if result, cards, ok := classifyStraightFlush(mandatory, optional); ok {
-		return result, cards
+	allPossibleHands := make([][]Card, len(allPossibleOptionals))
+	for i, os := range allPossibleOptionals {
+		hand := make([]Card, 5)
+		copy(hand[0:len(mandatory)], mandatory)
+		copy(hand[len(mandatory):], os)
+		allPossibleHands[i] = hand
 	}
-	if result, cards, ok := classifyFourOfAKind(mandatory, optional); ok {
-		return result, cards
+
+	bestHand := allPossibleHands[0]
+	bestRank := classifyHand(bestHand)
+
+	for i := 1; i < len(allPossibleHands); i++ {
+		hand := allPossibleHands[i]
+		rank := classifyHand(hand)
+		if Beats(rank, bestRank) {
+			bestHand = hand
+			bestRank = rank
+		}
 	}
-	if result, cards, ok := classifyFullHouse(mandatory, optional); ok {
-		return result, cards
-	}
-	if result, cards, ok := classifyFlush(mandatory, optional); ok {
-		return result, cards
-	}
-	if result, cards, ok := classifyStraight(mandatory, optional); ok {
-		return result, cards
-	}
-	if result, cards, ok := classifyThreeOfAKind(mandatory, optional); ok {
-		return result, cards
-	}
-	if result, cards, ok := classifyTwoPair(mandatory, optional); ok {
-		return result, cards
-	}
-	if result, cards, ok := classifyOnePair(mandatory, optional); ok {
-		return result, cards
-	}
-	return classifyHighCard(mandatory, optional)
+
+	return bestRank, bestHand
 }

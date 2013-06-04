@@ -144,24 +144,10 @@ func TestClassification(t *testing.T) {
 	for _, ct := range classTests {
 		level, cards := Classify(ct.mandatory, ct.optional)
 		if !levelsEqual(ct.expectedLevel, level) {
-			t.Errorf("Expected %q, found %q for %q / %q", ct.expectedLevel, level, ct.mandatory, ct.optional)
+			t.Errorf("Expected %q, found %q %v for %q / %q", ct.expectedLevel, level, cards, ct.mandatory, ct.optional)
 		}
 		if !cardsEqual(ct.expectedCards, cards) {
 			t.Errorf("Expected cards %q, found %q for %q / %q", ct.expectedCards, cards, ct.mandatory, ct.optional)
-		}
-	}
-}
-
-func TestBuildStraights(t *testing.T) {
-	suits := [][]Suit{{Spade}, {Club, Heart}, {Spade}, {Spade}, {Spade}}
-	expectedOutput := [][]Suit{{Spade, Club, Spade, Spade, Spade}, {Spade, Heart, Spade, Spade, Spade}}
-	actualOutput := buildStraights(suits)
-	for i := range expectedOutput {
-		for j := range expectedOutput[i] {
-			if expectedOutput[i][j] != actualOutput[i][j] {
-				t.Errorf("Expected %q at %v but found %q", expectedOutput[i], i, actualOutput[i])
-				break
-			}
 		}
 	}
 }
@@ -216,6 +202,70 @@ func TestSorting(t *testing.T) {
 	for i, c := range h("QD", "JC", "10C", "4S", "3C", "AS") {
 		if cards[i] != c {
 			t.Errorf("Expected %v at position %v of ace-low list, found %v", c, i, cards[i])
+		}
+	}
+}
+
+type LexSorter struct {
+	hands [][]Card
+}
+
+func (ls LexSorter) Len() int {
+	return len(ls.hands)
+}
+
+func (ls LexSorter) Less(i, j int) bool {
+	for k := 0; k < len(ls.hands[i]) && k < len(ls.hands[j]); k++ {
+		c1, c2 := ls.hands[i][k], ls.hands[j][k]
+		if c1 != c2 {
+			if c1.Rank != c2.Rank {
+				return c1.Rank < c2.Rank
+			}
+			return c1.Suit < c2.Suit
+		}
+	}
+	return false
+}
+
+func (ls LexSorter) Swap(i, j int) {
+	ls.hands[i], ls.hands[j] = ls.hands[j], ls.hands[i]
+}
+
+func TestAllChoices(t *testing.T) {
+	cards := h("AS", "QD", "JC", "3C", "2H")
+
+	expectedChoices := [][]Card{
+		h("AS", "QD", "JC"),
+		h("AS", "QD", "3C"),
+		h("AS", "JC", "3C"),
+		h("QD", "JC", "3C"),
+		h("AS", "QD", "2H"),
+		h("AS", "JC", "2H"),
+		h("QD", "JC", "2H"),
+		h("AS", "3C", "2H"),
+		h("QD", "3C", "2H"),
+		h("JC", "3C", "2H"),
+	}
+	sort.Sort(LexSorter{expectedChoices})
+	fmt.Println(expectedChoices)
+
+	choices := allChoices(cards, 3)
+	sort.Sort(LexSorter{choices})
+	fmt.Println(choices)
+
+	if len(choices) != len(expectedChoices) {
+		t.Errorf("Expected %v choices, found %v: %v / %v", len(expectedChoices), len(choices), expectedChoices, choices)
+	}
+
+	for i := range choices {
+		if len(expectedChoices[i]) != len(choices[i]) {
+			t.Errorf("Expected %v at choices[%v], found %v", expectedChoices[i], i, choices[i])
+		}
+		for j := range expectedChoices[i] {
+			if expectedChoices[i][j] != choices[i][j] {
+				t.Errorf("Expected %v at choices[%v], found %v", expectedChoices[i], i, choices[i])
+				break
+			}
 		}
 	}
 }
