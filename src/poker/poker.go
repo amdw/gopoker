@@ -335,9 +335,6 @@ func (cs CardSorter) Less(i, j int) bool {
 
 var noLevel = HandLevel{OnePair, []Rank{}}
 
-// TODO: These classification functions should be optimised and refactored to make their methods more consistent and avoid repeated
-// recalculation of the same data (e.g. ranks by suit, suits by rank, best remaining card).
-
 // See if this hand forms a straight flush. If so, return the level indicating that. HandLevel should be ignored if valid is false.
 func classifyStraightFlush(cards []Card) (hl HandLevel, ok bool) {
 	firstSuit := cards[0].Suit
@@ -365,11 +362,7 @@ func classifyStraightFlush(cards []Card) (hl HandLevel, ok bool) {
 }
 
 // See if "four of a kind" can be formed from this set of cards. If so, return the level of the best such hand; if not, indicate invalid.
-func classifyFourOfAKind(cards []Card) (hl HandLevel, ok bool) {
-	countsByRank := make([]int, 13)
-	for _, c := range cards {
-		countsByRank[c.Rank]++
-	}
+func classifyFourOfAKind(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
 	for _, r := range ranksDesc {
 		if countsByRank[r] < 4 {
 			continue
@@ -385,11 +378,7 @@ func classifyFourOfAKind(cards []Card) (hl HandLevel, ok bool) {
 }
 
 // See if a full house can be composed from this set of cards. If so, return the level of the best such hand; otherwise indicate invalid.
-func classifyFullHouse(cards []Card) (hl HandLevel, ok bool) {
-	countsByRank := make([]int, 13)
-	for _, c := range cards {
-		countsByRank[c.Rank]++
-	}
+func classifyFullHouse(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
 	overUnderRanks := make([]Rank, 2)
 	for _, r := range ranksDesc {
 		switch countsByRank[r] {
@@ -431,11 +420,7 @@ func classifyFlush(cards []Card) (hl HandLevel, ok bool) {
 }
 
 // Can we make a straight out of these cards? If so, return the level; otherwise, indicate invalid.
-func classifyStraight(cards []Card) (hl HandLevel, ok bool) {
-	countsByRank := make([]int, 13)
-	for _, c := range cards {
-		countsByRank[c.Rank]++
-	}
+func classifyStraight(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
 	for _, straight := range straights {
 		straightRealised := true
 		for _, r := range straight {
@@ -452,11 +437,7 @@ func classifyStraight(cards []Card) (hl HandLevel, ok bool) {
 }
 
 // Can we build three-of-a-kind from this set of cards? If so, return the level, otherwise indicate failure.
-func classifyThreeOfAKind(cards []Card) (hl HandLevel, ok bool) {
-	countsByRank := make([]int, 13)
-	for _, c := range cards {
-		countsByRank[c.Rank]++
-	}
+func classifyThreeOfAKind(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
 	for _, r := range ranksDesc {
 		if countsByRank[r] < 3 {
 			continue
@@ -473,11 +454,7 @@ func classifyThreeOfAKind(cards []Card) (hl HandLevel, ok bool) {
 }
 
 // Can we get two pairs out of this set of cards? If so, return the level, otherwise indicate failure.
-func classifyTwoPair(cards []Card) (hl HandLevel, ok bool) {
-	countsByRank := make([]int, 13)
-	for _, c := range cards {
-		countsByRank[c.Rank]++
-	}
+func classifyTwoPair(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
 	handRanks := make([]Rank, 3)
 	found := make([]bool, 3)
 	for _, r := range ranksDesc {
@@ -506,11 +483,7 @@ func classifyTwoPair(cards []Card) (hl HandLevel, ok bool) {
 }
 
 // Can we get a one-pair out of this set of cards? If so, return the level, otherwise indicate failure.
-func classifyOnePair(cards []Card) (hl HandLevel, ok bool) {
-	countsByRank := make([]int, 13)
-	for _, c := range cards {
-		countsByRank[c.Rank]++
-	}
+func classifyOnePair(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
 	for _, r := range ranksDesc {
 		if countsByRank[r] == 2 {
 			handRanks := []Rank{r}
@@ -542,28 +515,33 @@ func classifyHand(cards []Card) HandLevel {
 	// First sort the cards, as this makes some of the functions easier to write
 	sort.Sort(CardSorter{cards, false})
 
+	countsByRank := make([]int, 13)
+	for _, c := range cards {
+		countsByRank[c.Rank]++
+	}
+
 	if result, ok := classifyStraightFlush(cards); ok {
 		return result
 	}
-	if result, ok := classifyFourOfAKind(cards); ok {
+	if result, ok := classifyFourOfAKind(cards, countsByRank); ok {
 		return result
 	}
-	if result, ok := classifyFullHouse(cards); ok {
+	if result, ok := classifyFullHouse(cards, countsByRank); ok {
 		return result
 	}
 	if result, ok := classifyFlush(cards); ok {
 		return result
 	}
-	if result, ok := classifyStraight(cards); ok {
+	if result, ok := classifyStraight(cards, countsByRank); ok {
 		return result
 	}
-	if result, ok := classifyThreeOfAKind(cards); ok {
+	if result, ok := classifyThreeOfAKind(cards, countsByRank); ok {
 		return result
 	}
-	if result, ok := classifyTwoPair(cards); ok {
+	if result, ok := classifyTwoPair(cards, countsByRank); ok {
 		return result
 	}
-	if result, ok := classifyOnePair(cards); ok {
+	if result, ok := classifyOnePair(cards, countsByRank); ok {
 		return result
 	}
 	return classifyHighCard(cards)
