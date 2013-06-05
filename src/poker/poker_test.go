@@ -247,11 +247,9 @@ func TestAllChoices(t *testing.T) {
 		h("JC", "3C", "2H"),
 	}
 	sort.Sort(LexSorter{expectedChoices})
-	fmt.Println(expectedChoices)
 
 	choices := allChoices(cards, 3)
 	sort.Sort(LexSorter{choices})
-	fmt.Println(choices)
 
 	if len(choices) != len(expectedChoices) {
 		t.Errorf("Expected %v choices, found %v: %v / %v", len(expectedChoices), len(choices), expectedChoices, choices)
