@@ -29,7 +29,7 @@ import (
 	"strings"
 )
 
-type Suit int
+type Suit uint8
 
 const (
 	Heart Suit = iota
@@ -68,7 +68,7 @@ func (s Suit) HTML() string {
 	panic(fmt.Sprintf("Illegal suit value %v", s))
 }
 
-type Rank int
+type Rank uint8
 
 const (
 	Two Rank = iota
@@ -196,7 +196,7 @@ func C(c string) Card {
 // Classification of a poker hand (e.g. "straight flush"). For any two
 // hands with different classifications, the higher-classified hand
 // will always beat the lower.
-type HandClass int
+type HandClass uint8
 
 const (
 	HighCard HandClass = iota
