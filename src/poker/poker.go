@@ -48,9 +48,9 @@ func (s Suit) String() string {
 		return "S"
 	case Club:
 		return "C"
-
+	default:
+		return fmt.Sprintf("Unknown[%v]", int(s))
 	}
-	panic(fmt.Sprintf("Illegal Suit value %s", s))
 }
 
 // Render as suitable HTML Unicode
@@ -64,8 +64,9 @@ func (s Suit) HTML() string {
 		return "&#9824;"
 	case Club:
 		return "&#9827;"
+	default:
+		return fmt.Sprintf("Unknown[%v]", int(s))
 	}
-	panic(fmt.Sprintf("Illegal suit value %v", s))
 }
 
 type Rank int8
@@ -114,8 +115,9 @@ func (r Rank) String() string {
 		return "K"
 	case Ace:
 		return "A"
+	default:
+		return fmt.Sprintf("Unknown[%v]", int(r))
 	}
-	panic(fmt.Sprintf("Illegal Rank value %v", r))
 }
 
 type Card struct {
@@ -231,8 +233,9 @@ func (hc HandClass) String() string {
 		return "Four of a Kind"
 	case StraightFlush:
 		return "Straight Flush"
+	default:
+		return fmt.Sprintf("Unknown (%v)", int(hc))
 	}
-	panic(fmt.Sprintf("Illegal HandClass %v", hc))
 }
 
 // The full information needed to determine whether one hand beats another.
