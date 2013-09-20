@@ -94,6 +94,20 @@ const yourCardsKey = "yours"
 const tableCardsKey = "table"
 const simCountKey = "simcount"
 
+func duplicateCheck(yourCards, tableCards []poker.Card) (ok bool, dupeCard poker.Card) {
+	allCards := make([]poker.Card, len(yourCards)+len(tableCards))
+	copy(allCards, yourCards)
+	copy(allCards[len(yourCards):], tableCards)
+	cardDupeCheck := make(map[string]int)
+	for _, c := range allCards {
+		cardDupeCheck[c.String()]++
+		if cardDupeCheck[c.String()] > 1 {
+			return false, c
+		}
+	}
+	return true, poker.Card{}
+}
+
 func simulationParams(req *http.Request) (yourCards, tableCards []poker.Card, handsToPlay int, err error) {
 	yourCards = []poker.Card{}
 	tableCards = []poker.Card{}
@@ -127,6 +141,10 @@ func simulationParams(req *http.Request) (yourCards, tableCards []poker.Card, ha
 	}
 	if len(tableCards) > 5 {
 		return yourCards, tableCards, handsToPlay, errors.New(fmt.Sprintf("Maximum of 5 table cards allowed, found %v", len(tableCards)))
+	}
+	// Check for duplicate cards
+	if ok, dupeCard := duplicateCheck(yourCards, tableCards); !ok {
+		return yourCards, tableCards, handsToPlay, errors.New(fmt.Sprintf("Found duplicate card %v in specification", dupeCard))
 	}
 
 	if handsToPlayStrs, ok := req.Form[simCountKey]; ok && len(handsToPlayStrs) > 0 {

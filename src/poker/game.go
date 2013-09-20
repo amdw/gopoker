@@ -74,6 +74,7 @@ func (p *Pack) Shuffle() {
 }
 
 // Shuffle the pack, but fix certain cards in place. For use in simulations.
+// It is assumed that there are no duplicate cards in (tableCards+yourCards).
 func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
 	if len(tableCards) > 5 {
 		panic(fmt.Sprintf("Maximum of 5 table cards supported, found %v", len(tableCards)))
