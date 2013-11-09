@@ -160,7 +160,12 @@ func simulationParams(req *http.Request) (yourCards, tableCards []poker.Card, ha
 
 func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	fmt.Fprintf(w, "<html><head><title>Texas Hold'em simulator</title></head><body><h1>Texas Hold'em Simulator</h1>")
+	fmt.Fprintf(w, "<html><head><title>Texas Hold'em simulator</title>")
+	fmt.Fprintf(w, "<style>")
+	fmt.Fprintf(w, "table.countTable { border-collapse: collapse; }")
+	fmt.Fprintf(w, "td.countTable { border: 1px solid black; padding: 3px; }")
+	fmt.Fprintf(w, "</style>")
+	fmt.Fprintf(w, "</head><body><h1>Texas Hold'em Simulator</h1>")
 
 	players, err := getPlayers(req)
 	if err != nil {
@@ -197,9 +202,9 @@ func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<tr><td><b>Wins</b></td><td>%v (%.1f%%)", simulator.WinCount, (float32(simulator.WinCount)*100.0)/float32(simulator.HandCount))
 	fmt.Fprintf(w, "<tr><td><b>Your hand</b></td><td><ul>")
 	printClassCounts := func(counts []int) {
-		fmt.Fprintf(w, "<table>")
+		fmt.Fprintf(w, `<table class="countTable">`)
 		for class, freq := range counts {
-			fmt.Fprintf(w, `<tr><td>%v</td><td style="text-align:right">%v</td><td style="text-align:right">%.1f%%</td></tr>`, poker.HandClass(class).String(), freq, (float32(freq) * 100.0 / float32(simulator.HandCount)))
+			fmt.Fprintf(w, `<tr><td class="countTable">%v</td><td class="countTable" style="text-align:right">%v</td><td class="countTable" style="text-align:right">%.1f%%</td></tr>`, poker.HandClass(class).String(), freq, (float32(freq) * 100.0 / float32(simulator.HandCount)))
 		}
 		fmt.Fprintf(w, "</table>")
 	}
