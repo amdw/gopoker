@@ -199,7 +199,7 @@ func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 	printClassCounts := func(counts []int) {
 		fmt.Fprintf(w, "<table>")
 		for class, freq := range counts {
-			fmt.Fprintf(w, "<tr><td>%v</td><td>%v</td><td>%.1f%%</td></tr>", poker.HandClass(class).String(), freq, (float32(freq) * 100.0 / float32(simulator.HandCount)))
+			fmt.Fprintf(w, `<tr><td>%v</td><td style="text-align:right">%v</td><td style="text-align:right">%.1f%%</td></tr>`, poker.HandClass(class).String(), freq, (float32(freq) * 100.0 / float32(simulator.HandCount)))
 		}
 		fmt.Fprintf(w, "</table>")
 	}
