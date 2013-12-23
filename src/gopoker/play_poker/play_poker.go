@@ -22,7 +22,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"poker"
+	"gopoker/poker"
 )
 
 // Evaluate a few deals of Texas Hold'em

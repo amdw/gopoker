@@ -26,7 +26,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"poker"
+	"gopoker/poker"
 	"strconv"
 	"strings"
 )
