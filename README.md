@@ -23,6 +23,6 @@ Obviously, this requires you to have Go installed on your computer.
 
 This code was written as an exercise in Go programming and is not intended for any serious purposes whatsoever. For this reason, I have chosen to release it under a standard copyleft open source license which requires anyone who runs it on a network server to release any modifications they make under the same license.
 
-This should cause no inconvenience to anyone who wants to use this software for educational purposes, while making it unattractive to anyone who wants to incorporate it into, for example, a commercial online poker site.
+This should cause no inconvenience to anyone who wants to use this software for educational purposes, while making it unattractive to anyone who wants to incorporate it into, for example, a commercial online poker site. (I have nothing in principle against online poker: I just prefer not to have others profit from incorporating my work into a proprietary product without compensating me.)
 
 All files are Copyright 2013 Andrew Medworth and are released as free software under the GNU Affero GPL. See LICENSE file for more details.
