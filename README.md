@@ -15,7 +15,7 @@ An easy way to download and run this code is to clone the repository, add the re
 
     go install gopoker/...
 
-This should build and install both programs in the bin directory. You can then run either ```bin/play_poker``` or ```bin/poker_http``.
+This should build and install both programs in the bin directory. You can then run either ```bin/play_poker``` or ```bin/poker_http```.
 
 Obviously, this requires you to have Go installed on your computer.
 
