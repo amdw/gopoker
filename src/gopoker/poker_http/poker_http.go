@@ -167,15 +167,24 @@ func formatPct(num, denom int) string {
 }
 
 func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
-	printCell := func(content string, isNum bool) {
-		cssClass := "countTable"
+	cssClass := func(isNum, isZero bool) string {
+		result := "countTable"
 		if isNum {
-			cssClass += " numcell"
+			result += " numcell"
 		}
-		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass, content)
+		if isZero {
+			result += " zero"
+		}
+		return result
+	}
+	printStringCell := func(content string) {
+		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass(false, false), content)
 	}
 	printNumCell := func(content int) {
-		printCell(fmt.Sprintf("%v", content), true)
+		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass(true, content == 0), content)
+	}
+	printPctCell := func(num, denom int) {
+		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass(true, num == 0), formatPct(num, denom))
 	}
 	printRow := func(handClass string, classFreq, winCount, oppCount, oppWinCount int, isSummary bool) {
 		cssClass := ""
@@ -183,15 +192,15 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 			cssClass = ` class="summary"`
 		}
 		fmt.Fprintf(w, `<tr%v>`, cssClass)
-		printCell(handClass, false)
+		printStringCell(handClass)
 		printNumCell(classFreq)
-		printCell(formatPct(classFreq, simulator.HandCount), true)
+		printPctCell(classFreq, simulator.HandCount)
 		printNumCell(winCount)
-		printCell(formatPct(winCount, simulator.HandCount), true)
+		printPctCell(winCount, simulator.HandCount)
 		printNumCell(oppCount)
-		printCell(formatPct(oppCount, simulator.HandCount), true)
+		printPctCell(oppCount, simulator.HandCount)
 		printNumCell(oppWinCount)
-		printCell(formatPct(oppWinCount, simulator.HandCount), true)
+		printPctCell(oppWinCount, simulator.HandCount)
 		fmt.Fprintf(w, "</tr>")
 	}
 	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th><th class="countTable" colspan="4">For you</th><th class="countTable" colspan="4">For opponent</th></tr>`)
@@ -211,6 +220,7 @@ func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "table.countTable { border-collapse: collapse; }\n")
 	fmt.Fprintf(w, "th.countTable, td.countTable { border: 1px solid black; padding: 3px; }\n")
 	fmt.Fprintf(w, "td.numcell { text-align: right }\n")
+	fmt.Fprintf(w, "td.zero { color: lightgrey }\n")
 	fmt.Fprintf(w, ".summary { background-color: lightgrey }\n")
 	fmt.Fprintf(w, "</style>")
 	fmt.Fprintf(w, "</head><body><h1>Texas Hold'em Simulator</h1>")
