@@ -11,13 +11,17 @@ So far, there are the following features:
 
 # Installing and Running
 
+First, you need to have [the Go compiler](http://golang.org/) installed on your computer.
+
 An easy way to download and run this code is to clone the repository, add the resulting gopoker directory to your GOPATH, cd into it, and run
 
     go install gopoker/...
 
 This should build and install both programs in the bin directory. You can then run either ```bin/play_poker``` or ```bin/poker_http```.
 
-Obviously, this requires you to have Go installed on your computer.
+To run the tests, you can run:
+
+    go test gopoker/...
 
 # Licensing
 
