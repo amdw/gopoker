@@ -167,17 +167,38 @@ func formatPct(num, denom int) string {
 }
 
 func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
-	printRow := func(handClass string, ourCount, winCount, oppCount int, isSummary bool) {
+	printCell := func(content string, isNum bool) {
+		cssClass := "countTable"
+		if isNum {
+			cssClass += " numcell"
+		}
+		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass, content)
+	}
+	printNumCell := func(content int) {
+		printCell(fmt.Sprintf("%v", content), true)
+	}
+	printRow := func(handClass string, classFreq, winCount, oppCount, oppWinCount int, isSummary bool) {
 		cssClass := ""
 		if isSummary {
 			cssClass = ` class="summary"`
 		}
-		fmt.Fprintf(w, `<tr%v><td class="countTable">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td></tr>`, cssClass, handClass, ourCount, formatPct(ourCount, simulator.HandCount), winCount, formatPct(winCount, ourCount), oppCount, formatPct(oppCount, simulator.HandCount))
+		fmt.Fprintf(w, `<tr%v>`, cssClass)
+		printCell(handClass, false)
+		printNumCell(classFreq)
+		printCell(formatPct(classFreq, simulator.HandCount), true)
+		printNumCell(winCount)
+		printCell(formatPct(winCount, classFreq), true)
+		printNumCell(oppCount)
+		printCell(formatPct(oppCount, simulator.HandCount), true)
+		printNumCell(oppWinCount)
+		printCell(formatPct(oppWinCount, oppCount), true)
+		fmt.Fprintf(w, "</tr>")
 	}
-	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable">Hand</th><th class="countTable" colspan="2">Freq (you)</th><th class="countTable" colspan="2">Wins</th><th class="countTable" colspan="2">Freq (opponent)</th></tr>`)
-	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, true)
+	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th><th class="countTable" colspan="4">For you</th><th class="countTable" colspan="4">For opponent</th></tr>`)
+	fmt.Fprintf(w, `<tr><th class="countTable" colspan="2">Freq</th><th class="countTable" colspan="2">Wins</th><th class="countTable" colspan="2">Freq</th><th class="countTable" colspan="2">Wins</th></tr>`)
+	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, simulator.HandCount-simulator.WinCount, true)
 	for class := range simulator.OurClassCounts {
-		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.OpponentClassCounts[class], false)
+		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.OpponentClassCounts[class], simulator.ClassOppWinCounts[class], false)
 	}
 	fmt.Fprintf(w, "</table>")
 }

@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestSim(t *testing.T) {
+func TestSimSanity(t *testing.T) {
 	sim := Simulator{}
 	simulations := 10000
 	sim.SimulateHoldem([]Card{}, []Card{}, 5, simulations)
@@ -14,7 +14,7 @@ func TestSim(t *testing.T) {
 	if sim.WinCount < 0 || sim.WinCount > simulations {
 		t.Errorf("Illogical win count %v", sim.WinCount)
 	}
-	checkCounts := func(counts []int, shouldSumToSims bool, name string) {
+	checkCounts := func(counts []int, shouldSumToSims bool, name string) int {
 		if len(counts) != int(MAX_HANDCLASS) {
 			t.Errorf("Expected %v %v, found %v", MAX_HANDCLASS, name, len(counts))
 		}
@@ -31,8 +31,13 @@ func TestSim(t *testing.T) {
 		if shouldSumToSims && sum != simulations {
 			t.Errorf("Expected sum %v for %v, found %v", simulations, name, sum)
 		}
+		return sum
 	}
 	checkCounts(sim.OurClassCounts, true, "OurClassCounts")
 	checkCounts(sim.OpponentClassCounts, true, "OpponentClassCounts")
-	checkCounts(sim.ClassWinCounts, false, "ClassWinCounts")
+	ourWins := checkCounts(sim.ClassWinCounts, false, "ClassWinCounts")
+	oppWins := checkCounts(sim.ClassOppWinCounts, false, "ClassOppWinCounts")
+	if ourWins+oppWins != simulations {
+		t.Errorf("Our wins and opponent wins sum to %v, expected %v", ourWins+oppWins, simulations)
+	}
 }

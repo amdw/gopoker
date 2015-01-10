@@ -25,6 +25,7 @@ type Simulator struct {
 	OurClassCounts      []int
 	OpponentClassCounts []int
 	ClassWinCounts      []int
+	ClassOppWinCounts   []int
 }
 
 func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsToPlay int) {
@@ -33,16 +34,19 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 	s.OurClassCounts = make([]int, MAX_HANDCLASS)
 	s.OpponentClassCounts = make([]int, MAX_HANDCLASS)
 	s.ClassWinCounts = make([]int, MAX_HANDCLASS)
+	s.ClassOppWinCounts = make([]int, MAX_HANDCLASS)
 
 	p := NewPack()
 	for i := 0; i < handsToPlay; i++ {
 		p.shuffleFixing(tableCards, yourCards)
-		won, ourLevel, opponentLevel := p.SimulateOneHoldemHand(players)
+		won, ourLevel, bestOpponentLevel := p.SimulateOneHoldemHand(players)
 		if won {
 			s.WinCount++
 			s.ClassWinCounts[ourLevel.Class]++
+		} else {
+			s.ClassOppWinCounts[bestOpponentLevel.Class]++
 		}
 		s.OurClassCounts[ourLevel.Class]++
-		s.OpponentClassCounts[opponentLevel.Class]++
+		s.OpponentClassCounts[bestOpponentLevel.Class]++
 	}
 }
