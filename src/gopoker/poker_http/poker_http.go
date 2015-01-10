@@ -187,11 +187,11 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		printNumCell(classFreq)
 		printCell(formatPct(classFreq, simulator.HandCount), true)
 		printNumCell(winCount)
-		printCell(formatPct(winCount, classFreq), true)
+		printCell(formatPct(winCount, simulator.HandCount), true)
 		printNumCell(oppCount)
 		printCell(formatPct(oppCount, simulator.HandCount), true)
 		printNumCell(oppWinCount)
-		printCell(formatPct(oppWinCount, oppCount), true)
+		printCell(formatPct(oppWinCount, simulator.HandCount), true)
 		fmt.Fprintf(w, "</tr>")
 	}
 	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th><th class="countTable" colspan="4">For you</th><th class="countTable" colspan="4">For opponent</th></tr>`)
