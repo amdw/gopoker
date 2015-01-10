@@ -24,6 +24,7 @@ type Simulator struct {
 	WinCount            int
 	OurClassCounts      []int
 	OpponentClassCounts []int
+	ClassWinCounts      []int
 }
 
 func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsToPlay int) {
@@ -31,6 +32,7 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 	s.WinCount = 0
 	s.OurClassCounts = make([]int, MAX_HANDCLASS)
 	s.OpponentClassCounts = make([]int, MAX_HANDCLASS)
+	s.ClassWinCounts = make([]int, MAX_HANDCLASS)
 
 	p := NewPack()
 	for i := 0; i < handsToPlay; i++ {
@@ -38,6 +40,7 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 		won, ourLevel, opponentLevel := p.SimulateOneHoldemHand(players)
 		if won {
 			s.WinCount++
+			s.ClassWinCounts[ourLevel.Class]++
 		}
 		s.OurClassCounts[ourLevel.Class]++
 		s.OpponentClassCounts[opponentLevel.Class]++

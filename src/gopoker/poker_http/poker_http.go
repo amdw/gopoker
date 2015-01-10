@@ -23,10 +23,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"gopoker/poker"
 	"html/template"
 	"log"
 	"net/http"
-	"gopoker/poker"
 	"strconv"
 	"strings"
 )
@@ -158,12 +158,39 @@ func simulationParams(req *http.Request) (yourCards, tableCards []poker.Card, ha
 	return yourCards, tableCards, handsToPlay, nil
 }
 
+func formatPct(num, denom int) string {
+	result := ""
+	if denom != 0 {
+		result = fmt.Sprintf("%.1f%%", float32(num)*100.0/float32(denom))
+	}
+	return result
+}
+
+func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
+	printRow := func(handClass string, ourCount, winCount, oppCount int, isSummary bool) {
+		cssClass := ""
+		if isSummary {
+			cssClass = ` class="summary"`
+		}
+		fmt.Fprintf(w, `<tr%v><td class="countTable">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td><td class="countTable numcell">%v</td></tr>`, cssClass, handClass, ourCount, formatPct(ourCount, simulator.HandCount), winCount, formatPct(winCount, ourCount), oppCount, formatPct(oppCount, simulator.HandCount))
+	}
+	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable">Hand</th><th class="countTable" colspan="2">Freq (you)</th><th class="countTable" colspan="2">Wins</th><th class="countTable" colspan="2">Freq (opponent)</th></tr>`)
+	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, true)
+	for class := range simulator.OurClassCounts {
+		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.OpponentClassCounts[class], false)
+	}
+	fmt.Fprintf(w, "</table>")
+}
+
 func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	fmt.Fprintf(w, "<html><head><title>Texas Hold'em simulator</title>")
 	fmt.Fprintf(w, "<style>")
-	fmt.Fprintf(w, "table.countTable { border-collapse: collapse; }")
-	fmt.Fprintf(w, "td.countTable { border: 1px solid black; padding: 3px; }")
+	fmt.Fprintf(w, "td.formcell { vertical-align: top }\n")
+	fmt.Fprintf(w, "table.countTable { border-collapse: collapse; }\n")
+	fmt.Fprintf(w, "th.countTable, td.countTable { border: 1px solid black; padding: 3px; }\n")
+	fmt.Fprintf(w, "td.numcell { text-align: right }\n")
+	fmt.Fprintf(w, ".summary { background-color: lightgrey }\n")
 	fmt.Fprintf(w, "</style>")
 	fmt.Fprintf(w, "</head><body><h1>Texas Hold'em Simulator</h1>")
 
@@ -195,24 +222,13 @@ func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 		}
 		return strings.Join(text, ",")
 	}
-	fmt.Fprintf(w, `<tr><td><b>Players</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, playersKey, players)
-	fmt.Fprintf(w, `<tr><td><b>Your cards</b><br/><i>(comma-separated, e.g. 'KD,10H')</i></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(yourCards), yourCardsKey, cardText(yourCards))
-	fmt.Fprintf(w, `<tr><td><b>Table cards</b></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(tableCards), tableCardsKey, cardText(tableCards))
-	fmt.Fprintf(w, `<tr><td><b>Simulations</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, simCountKey, simulator.HandCount)
-	fmt.Fprintf(w, "<tr><td><b>Wins</b></td><td>%v (%.1f%%)", simulator.WinCount, (float32(simulator.WinCount)*100.0)/float32(simulator.HandCount))
-	fmt.Fprintf(w, "<tr><td><b>Your hand</b></td><td><ul>")
-	printClassCounts := func(counts []int) {
-		fmt.Fprintf(w, `<table class="countTable">`)
-		for class, freq := range counts {
-			fmt.Fprintf(w, `<tr><td class="countTable">%v</td><td class="countTable" style="text-align:right">%v</td><td class="countTable" style="text-align:right">%.1f%%</td></tr>`, poker.HandClass(class).String(), freq, (float32(freq) * 100.0 / float32(simulator.HandCount)))
-		}
-		fmt.Fprintf(w, "</table>")
-	}
-	printClassCounts(simulator.OurClassCounts)
-	fmt.Fprintf(w, "</ul></td></tr>")
-	fmt.Fprintf(w, "<tr><td><b>Opponent's hand</b></td><td><ul>")
-	printClassCounts(simulator.OpponentClassCounts)
-	fmt.Fprintf(w, "</ul></td></tr>")
+	fmt.Fprintf(w, `<tr><td class="formcell"><b>Players</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, playersKey, players)
+	fmt.Fprintf(w, `<tr><td class="formcell"><b>Your cards</b><br/><i>(comma-separated, e.g. 'KD,10H')</i></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(yourCards), yourCardsKey, cardText(yourCards))
+	fmt.Fprintf(w, `<tr><td class="formcell"><b>Table cards</b></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(tableCards), tableCardsKey, cardText(tableCards))
+	fmt.Fprintf(w, `<tr><td class="formcell"><b>Simulations</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, simCountKey, simulator.HandCount)
+	fmt.Fprintf(w, `<tr><td class="formcell"><b>Results</b></td><td>`)
+	printResultTable(w, simulator)
+	fmt.Fprintf(w, "</td></tr>")
 	fmt.Fprintf(w, "</table></form></body></html>")
 }
 
