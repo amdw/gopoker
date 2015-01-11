@@ -81,7 +81,7 @@ func PlayHoldem(w http.ResponseWriter, req *http.Request) {
 	}
 	fmt.Fprintf(w, "</ul>")
 	fmt.Fprintf(w, "<h2>Results</h2><table><tr><th>Position</th><th>Player</th><th>Hand</th><th>Cards</th></tr>")
-	for i, outcome := range sortedOutcomes.Outcomes {
+	for i, outcome := range sortedOutcomes {
 		fmt.Fprintf(w, "<tr><td>%v</td><td>%v</td><td>%v</td><td>%v</td></tr>", i+1, outcome.Player, outcome.Level, formatCards(outcome.Cards))
 	}
 	fmt.Fprintf(w, "</table>")

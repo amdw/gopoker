@@ -115,7 +115,8 @@ func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
 	copy(p.Cards[5+len(yourCards):52], nonFixedCards[i:len(nonFixedCards)])
 }
 
-func (p *Pack) getHoldemOutcomes(players int) (onTable []Card, playerCards [][]Card, outcomes []PlayerOutcome) {
+// Play out a hand of holdem, and return the table cards, the player cards for each player, and a sorted list of player outcomes.
+func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, outcomes []PlayerOutcome) {
 	onTable = p.Cards[0:5]
 
 	playerCards = make([][]Card, players)
@@ -125,35 +126,31 @@ func (p *Pack) getHoldemOutcomes(players int) (onTable []Card, playerCards [][]C
 		level, cards := Classify(playerCards[player], onTable)
 		outcomes[player] = PlayerOutcome{player + 1, level, cards}
 	}
-	return onTable, playerCards, outcomes
-}
 
-// Play out one hand of Texas Hold'em and return the full outcome (positions of all cards, and outcome for all players).
-func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, handSorter HandSorter) {
-	onTable, playerCards, outcomes := p.getHoldemOutcomes(players)
-
-	handSorter = HandSorter{outcomes}
+	handSorter := HandSorter{outcomes}
 	sort.Sort(handSorter)
 
-	return onTable, playerCards, handSorter
+	return onTable, playerCards, handSorter.Outcomes
 }
 
 // Play out one hand of Texas Hold'em and return whether or not player 1 won, plus player 1's hand level, plus the best hand level of any of player 1's opponents.
 func (p *Pack) SimulateOneHoldemHand(players int) (won bool, ourLevel, bestOpponentLevel HandLevel) {
-	_, _, outcomes := p.getHoldemOutcomes(players)
+	_, _, outcomes := p.PlayHoldem(players)
 
-	won = true
-	bestOpponent := 1
-	for i := 1; i < len(outcomes); i++ {
-		if Beats(outcomes[i].Level, outcomes[0].Level) {
-			won = false
-		}
-		if Beats(outcomes[i].Level, outcomes[bestOpponent].Level) {
-			bestOpponent = i
+	won = outcomes[0].Player == 0
+	var ourOutcome PlayerOutcome
+	opponentOutcomes := make([]PlayerOutcome, players-1)
+	i := 0
+	for _, o := range outcomes {
+		if o.Player == 0 {
+			ourOutcome = o
+		} else {
+			opponentOutcomes = append(opponentOutcomes, o)
+			i++
 		}
 	}
 
-	return won, outcomes[0].Level, outcomes[bestOpponent].Level
+	return won, ourOutcome.Level, opponentOutcomes[0].Level
 }
 
 func NewPack() Pack {

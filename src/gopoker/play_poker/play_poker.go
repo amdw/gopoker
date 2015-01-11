@@ -42,9 +42,9 @@ func main() {
 		pack.Shuffle()
 		onTable, playerCards, sortedOutcomes := pack.PlayHoldem(1)
 		if verbose {
-			fmt.Printf("On table: %v; in hand: %v; outcome: %v %v\n", onTable, playerCards[0], sortedOutcomes.Outcomes[0].Level, sortedOutcomes.Outcomes[0].Cards)
+			fmt.Printf("On table: %v; in hand: %v; outcome: %v %v\n", onTable, playerCards[0], sortedOutcomes[0].Level, sortedOutcomes[0].Cards)
 		}
-		frequencies[sortedOutcomes.Outcomes[0].Level.Class]++
+		frequencies[sortedOutcomes[0].Level.Class]++
 	}
 	fmt.Printf("Hand frequencies (total %v):\n", handsToPlay)
 	for c := poker.MAX_HANDCLASS - 1; c >= 0; c-- {
