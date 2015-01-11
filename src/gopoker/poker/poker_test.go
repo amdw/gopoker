@@ -21,7 +21,6 @@ package poker
 
 import (
 	"fmt"
-	"math/rand"
 	"sort"
 	"testing"
 )
@@ -149,42 +148,6 @@ func TestClassification(t *testing.T) {
 		}
 		if !cardsEqual(ct.expectedCards, cards) {
 			t.Errorf("Expected cards %q, found %q for %q / %q", ct.expectedCards, cards, ct.mandatory, ct.optional)
-		}
-	}
-}
-
-func TestFixedShuffle(t *testing.T) {
-	pack := NewPack()
-	myCards := h("KS", "AC")
-	tableCards := h("10D", "2C", "AS")
-	pack.randGen = rand.New(rand.NewSource(1234)) // Deterministic for repeatable tests
-
-	for i := 0; i < 100; i++ {
-		pack.Shuffle()
-		pack.shuffleFixing(tableCards, myCards)
-		for j, c := range h("10D", "2C", "AS") {
-			if pack.Cards[j] != c {
-				t.Fatalf("Expected %v at Cards[%v], found %v", c, j, pack.Cards[j])
-			}
-		}
-		for j, c := range h("KS", "AC") {
-			if pack.Cards[j+5] != c {
-				t.Fatalf("Expected %v at Cards[%v], found %v", c, j+5, pack.Cards[j+5])
-			}
-		}
-		permCheck := make([][]int, 4)
-		for i := 0; i < 4; i++ {
-			permCheck[i] = make([]int, 13)
-		}
-		for _, c := range pack.Cards {
-			permCheck[c.Suit][c.Rank]++
-		}
-		for s := range permCheck {
-			for r, count := range permCheck[s] {
-				if count != 1 {
-					t.Fatalf("Expected exactly one %v%v in pack after shuffle, found %v", Rank(r).String(), Suit(s).String(), count)
-				}
-			}
 		}
 	}
 }
