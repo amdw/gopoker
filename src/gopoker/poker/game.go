@@ -140,13 +140,11 @@ func (p *Pack) SimulateOneHoldemHand(players int) (won bool, ourLevel, bestOppon
 	won = outcomes[0].Player == 0
 	var ourOutcome PlayerOutcome
 	opponentOutcomes := make([]PlayerOutcome, players-1)
-	i := 0
 	for _, o := range outcomes {
 		if o.Player == 0 {
 			ourOutcome = o
 		} else {
 			opponentOutcomes = append(opponentOutcomes, o)
-			i++
 		}
 	}
 
