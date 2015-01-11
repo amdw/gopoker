@@ -20,12 +20,17 @@ along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 package poker
 
 type Simulator struct {
-	HandCount           int
-	WinCount            int
-	OurClassCounts      []int
-	OpponentClassCounts []int
-	ClassWinCounts      []int
-	ClassOppWinCounts   []int
+	HandCount              int
+	WinCount               int
+	RandomOpponentWinCount int
+
+	OurClassCounts            []int
+	BestOpponentClassCounts   []int
+	RandomOpponentClassCounts []int
+
+	ClassWinCounts        []int
+	ClassBestOppWinCounts []int
+	ClassRandOppWinCounts []int
 
 	BestHand          HandLevel
 	BestOppHand       HandLevel
@@ -36,10 +41,15 @@ type Simulator struct {
 func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsToPlay int) {
 	s.HandCount = handsToPlay
 	s.WinCount = 0
+	s.RandomOpponentWinCount = 0
+
 	s.OurClassCounts = make([]int, MAX_HANDCLASS)
-	s.OpponentClassCounts = make([]int, MAX_HANDCLASS)
+	s.BestOpponentClassCounts = make([]int, MAX_HANDCLASS)
+	s.RandomOpponentClassCounts = make([]int, MAX_HANDCLASS)
+
 	s.ClassWinCounts = make([]int, MAX_HANDCLASS)
-	s.ClassOppWinCounts = make([]int, MAX_HANDCLASS)
+	s.ClassBestOppWinCounts = make([]int, MAX_HANDCLASS)
+	s.ClassRandOppWinCounts = make([]int, MAX_HANDCLASS)
 
 	s.BestHand = MinLevel()
 	s.BestOppHand = MinLevel()
@@ -55,15 +65,21 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 	p := NewPack()
 	for i := 0; i < handsToPlay; i++ {
 		p.shuffleFixing(tableCards, yourCards)
-		won, ourLevel, bestOpponentLevel := p.SimulateOneHoldemHand(players)
+		won, ourLevel, bestOpponentLevel, randomOpponentLevel := p.SimulateOneHoldemHand(players)
 		if won {
 			s.WinCount++
 			s.ClassWinCounts[ourLevel.Class]++
 		} else {
-			s.ClassOppWinCounts[bestOpponentLevel.Class]++
+			s.ClassBestOppWinCounts[bestOpponentLevel.Class]++
+			if !Beats(bestOpponentLevel, randomOpponentLevel) {
+				// The random opponent did at least as well as the winner
+				s.RandomOpponentWinCount++
+				s.ClassRandOppWinCounts[randomOpponentLevel.Class]++
+			}
 		}
 		s.OurClassCounts[ourLevel.Class]++
-		s.OpponentClassCounts[bestOpponentLevel.Class]++
+		s.BestOpponentClassCounts[bestOpponentLevel.Class]++
+		s.RandomOpponentClassCounts[randomOpponentLevel.Class]++
 
 		if Beats(ourLevel, s.BestHand) {
 			s.BestHand = ourLevel

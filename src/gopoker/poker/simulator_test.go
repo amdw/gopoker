@@ -34,11 +34,19 @@ func TestSimSanity(t *testing.T) {
 		return sum
 	}
 	checkCounts(sim.OurClassCounts, true, "OurClassCounts")
-	checkCounts(sim.OpponentClassCounts, true, "OpponentClassCounts")
+	checkCounts(sim.BestOpponentClassCounts, true, "BestOpponentClassCounts")
+	checkCounts(sim.RandomOpponentClassCounts, true, "RandomOpponentClassCounts")
 	ourWins := checkCounts(sim.ClassWinCounts, false, "ClassWinCounts")
-	oppWins := checkCounts(sim.ClassOppWinCounts, false, "ClassOppWinCounts")
-	if ourWins+oppWins != simulations {
-		t.Errorf("Our wins and opponent wins sum to %v, expected %v", ourWins+oppWins, simulations)
+	bestOppWins := checkCounts(sim.ClassBestOppWinCounts, false, "ClassBestOppWinCounts")
+	if ourWins+bestOppWins != simulations {
+		t.Errorf("Our wins and opponent wins sum to %v, expected %v", ourWins+bestOppWins, simulations)
+	}
+	randOppWins := checkCounts(sim.ClassRandOppWinCounts, false, "ClassRandOppWinCounts")
+	if randOppWins != sim.RandomOpponentWinCount {
+		t.Errorf("Random opponent wins %v but classes sum to %v", sim.RandomOpponentWinCount, randOppWins)
+	}
+	if randOppWins > bestOppWins {
+		t.Errorf("Random opponent won more than best opponent (%v vs %v)", randOppWins, bestOppWins)
 	}
 
 	for c, l := range sim.ClassBestHands {

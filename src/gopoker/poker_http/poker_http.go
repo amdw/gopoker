@@ -191,7 +191,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		}
 		fmt.Fprintf(w, `<th class="countTable"%v>%v</th>`, colspanStr, content)
 	}
-	printRow := func(handClass string, classFreq, winCount, oppCount, oppWinCount int, bestHand, bestOppHand string, isSummary bool) {
+	printRow := func(handClass string, classFreq, winCount, bestOppCount, bestOppWinCount, randOppCount, randOppWinCount int, bestHand, bestOppHand string, isSummary bool) {
 		cssClass := ""
 		if isSummary {
 			cssClass = ` class="summary"`
@@ -203,16 +203,21 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		printNumCell(winCount)
 		printPctCell(winCount, simulator.HandCount)
 		printStringCell(bestHand)
-		printNumCell(oppCount)
-		printPctCell(oppCount, simulator.HandCount)
-		printNumCell(oppWinCount)
-		printPctCell(oppWinCount, simulator.HandCount)
+		printNumCell(bestOppCount)
+		printPctCell(bestOppCount, simulator.HandCount)
+		printNumCell(bestOppWinCount)
+		printPctCell(bestOppWinCount, simulator.HandCount)
 		printStringCell(bestOppHand)
+		printNumCell(randOppCount)
+		printPctCell(randOppCount, simulator.HandCount)
+		printNumCell(randOppWinCount)
+		printPctCell(randOppWinCount, simulator.HandCount)
 		fmt.Fprintf(w, "</tr>")
 	}
 	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th>`)
 	printHeadCell("For you", 5)
-	printHeadCell("For opponent", 5)
+	printHeadCell("For best opponent", 5)
+	printHeadCell("For random opponent", 5)
 	fmt.Fprintf(w, `</tr><tr>`)
 	printHeadCell("Freq", 2)
 	printHeadCell("Wins", 2)
@@ -220,18 +225,20 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	printHeadCell("Freq", 2)
 	printHeadCell("Wins", 2)
 	printHeadCell("Best hand", 1)
+	printHeadCell("Freq", 2)
+	printHeadCell("Wins", 2)
 	fmt.Fprintf(w, `</tr>`)
-	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, simulator.HandCount-simulator.WinCount, simulator.BestHand.PrettyPrint(), simulator.BestOppHand.PrettyPrint(), true)
+	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, simulator.HandCount-simulator.WinCount, simulator.HandCount, simulator.RandomOpponentWinCount, simulator.BestHand.PrettyPrint(), simulator.BestOppHand.PrettyPrint(), true)
 	for class := range simulator.OurClassCounts {
 		bestHand := ""
 		if simulator.OurClassCounts[class] > 0 {
 			bestHand = simulator.ClassBestHands[class].PrettyPrint()
 		}
 		bestOppHand := ""
-		if simulator.OpponentClassCounts[class] > 0 {
+		if simulator.BestOpponentClassCounts[class] > 0 {
 			bestOppHand = simulator.ClassBestOppHands[class].PrettyPrint()
 		}
-		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.OpponentClassCounts[class], simulator.ClassOppWinCounts[class], bestHand, bestOppHand, false)
+		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.BestOpponentClassCounts[class], simulator.ClassBestOppWinCounts[class], simulator.RandomOpponentClassCounts[class], simulator.ClassRandOppWinCounts[class], bestHand, bestOppHand, false)
 	}
 	fmt.Fprintf(w, "</table>")
 }
@@ -266,7 +273,6 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 
 	simulator := poker.Simulator{}
 	simulator.SimulateHoldem(yourCards, tableCards, players, handsToPlay)
-	fmt.Fprintf(w, "<h2>Simulation outcome</h2>")
 	fmt.Fprintf(w, `<form method="get">`)
 	fmt.Fprintf(w, `<p><input type="submit" value="Rerun"/> <a href="/simulate">Reset</a></p>`)
 	fmt.Fprintf(w, "<table>")
@@ -281,8 +287,10 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, `<tr><td class="formcell"><b>Your cards</b><br/><i>(comma-separated, e.g. 'KD,10H')</i></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(yourCards), yourCardsKey, cardText(yourCards))
 	fmt.Fprintf(w, `<tr><td class="formcell"><b>Table cards</b></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(tableCards), tableCardsKey, cardText(tableCards))
 	fmt.Fprintf(w, `<tr><td class="formcell"><b>Simulations</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, simCountKey, simulator.HandCount)
-	fmt.Fprintf(w, `<tr><td class="formcell"><b>Results</b></td><td>`)
+	fmt.Fprintf(w, "</td></tr></table>")
+
+	fmt.Fprintf(w, "<h3>Results</h3>")
 	printResultTable(w, simulator)
-	fmt.Fprintf(w, "</td></tr>")
-	fmt.Fprintf(w, "</table></form></body></html>")
+
+	fmt.Fprintf(w, "</form></body></html>")
 }

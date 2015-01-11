@@ -46,10 +46,16 @@ func TestSimInternalSanity(t *testing.T) {
 	tests := 1000
 	for i := 0; i < tests; i++ {
 		p.Shuffle()
-		won, ourLevel, bestOpponentLevel := p.SimulateOneHoldemHand(5)
+		won, ourLevel, bestOpponentLevel, randomOpponentLevel := p.SimulateOneHoldemHand(5)
+		if Beats(randomOpponentLevel, bestOpponentLevel) {
+			t.Errorf("Random opponent level %v beats best level %v", randomOpponentLevel, bestOpponentLevel)
+		}
 		if won {
 			if Beats(bestOpponentLevel, ourLevel) {
-				t.Errorf("Simulator says we won but %v beats %v", bestOpponentLevel, ourLevel)
+				t.Errorf("Simulator says we won but best opponent %v beats our %v", bestOpponentLevel, ourLevel)
+			}
+			if Beats(randomOpponentLevel, ourLevel) {
+				t.Errorf("Simulator says we won but random opponent %v beats our %v", randomOpponentLevel, ourLevel)
 			}
 		} else {
 			if Beats(ourLevel, bestOpponentLevel) {
