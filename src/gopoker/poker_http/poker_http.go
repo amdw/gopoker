@@ -17,21 +17,19 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 */
-package main
+package poker_http
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"gopoker/poker"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
-func menu(w http.ResponseWriter, req *http.Request) {
+func Menu(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<html><head><title>Poker</title></head><body><h1>Poker</h1><ul>")
 	fmt.Fprintf(w, `<li><a href="/play">Play</a></li>`)
 	fmt.Fprintf(w, `<li><a href="/simulate">Simulate</a></li>`)
@@ -60,7 +58,7 @@ func getPlayers(req *http.Request) (int, error) {
 	return players, nil
 }
 
-func playHoldem(w http.ResponseWriter, req *http.Request) {
+func PlayHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	fmt.Fprintf(w, "<html><head><title>A game of Texas Hold'em</title></head><body><h1>A game of Texas Hold'em</h1>")
 	players, err := getPlayers(req)
@@ -186,7 +184,14 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	printPctCell := func(num, denom int) {
 		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass(true, num == 0), formatPct(num, denom))
 	}
-	printRow := func(handClass string, classFreq, winCount, oppCount, oppWinCount int, isSummary bool) {
+	printHeadCell := func(content string, colspan int) {
+		colspanStr := ""
+		if colspan > 1 {
+			colspanStr = fmt.Sprintf(` colspan="%v"`, colspan)
+		}
+		fmt.Fprintf(w, `<th class="countTable"%v>%v</th>`, colspanStr, content)
+	}
+	printRow := func(handClass string, classFreq, winCount, oppCount, oppWinCount int, bestHand, bestOppHand string, isSummary bool) {
 		cssClass := ""
 		if isSummary {
 			cssClass = ` class="summary"`
@@ -197,22 +202,41 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		printPctCell(classFreq, simulator.HandCount)
 		printNumCell(winCount)
 		printPctCell(winCount, simulator.HandCount)
+		printStringCell(bestHand)
 		printNumCell(oppCount)
 		printPctCell(oppCount, simulator.HandCount)
 		printNumCell(oppWinCount)
 		printPctCell(oppWinCount, simulator.HandCount)
+		printStringCell(bestOppHand)
 		fmt.Fprintf(w, "</tr>")
 	}
-	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th><th class="countTable" colspan="4">For you</th><th class="countTable" colspan="4">For opponent</th></tr>`)
-	fmt.Fprintf(w, `<tr><th class="countTable" colspan="2">Freq</th><th class="countTable" colspan="2">Wins</th><th class="countTable" colspan="2">Freq</th><th class="countTable" colspan="2">Wins</th></tr>`)
-	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, simulator.HandCount-simulator.WinCount, true)
+	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th>`)
+	printHeadCell("For you", 5)
+	printHeadCell("For opponent", 5)
+	fmt.Fprintf(w, `</tr><tr>`)
+	printHeadCell("Freq", 2)
+	printHeadCell("Wins", 2)
+	printHeadCell("Best hand", 1)
+	printHeadCell("Freq", 2)
+	printHeadCell("Wins", 2)
+	printHeadCell("Best hand", 1)
+	fmt.Fprintf(w, `</tr>`)
+	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, simulator.HandCount-simulator.WinCount, simulator.BestHand.PrettyPrint(), simulator.BestOppHand.PrettyPrint(), true)
 	for class := range simulator.OurClassCounts {
-		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.OpponentClassCounts[class], simulator.ClassOppWinCounts[class], false)
+		bestHand := ""
+		if simulator.OurClassCounts[class] > 0 {
+			bestHand = simulator.ClassBestHands[class].PrettyPrint()
+		}
+		bestOppHand := ""
+		if simulator.OpponentClassCounts[class] > 0 {
+			bestOppHand = simulator.ClassBestOppHands[class].PrettyPrint()
+		}
+		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.OpponentClassCounts[class], simulator.ClassOppWinCounts[class], bestHand, bestOppHand, false)
 	}
 	fmt.Fprintf(w, "</table>")
 }
 
-func simulateHoldem(w http.ResponseWriter, req *http.Request) {
+func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	fmt.Fprintf(w, "<html><head><title>Texas Hold'em simulator</title>")
 	fmt.Fprintf(w, "<style>")
@@ -261,20 +285,4 @@ func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 	printResultTable(w, simulator)
 	fmt.Fprintf(w, "</td></tr>")
 	fmt.Fprintf(w, "</table></form></body></html>")
-}
-
-func main() {
-	var port int
-	flag.IntVar(&port, "port", 8080, "Listen port for HTTP server")
-	flag.Parse()
-
-	log.Printf("Listening on port %v...\n", port)
-
-	http.HandleFunc("/", menu)
-	http.HandleFunc("/play", playHoldem)
-	http.HandleFunc("/simulate", simulateHoldem)
-	err := http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
 }

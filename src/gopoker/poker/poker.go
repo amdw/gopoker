@@ -247,13 +247,46 @@ type HandLevel struct {
 	Tiebreaks []Rank
 }
 
-func (hl HandLevel) String() string {
+// Function which returns a hand level beaten by any legitimate level
+func MinLevel() HandLevel {
+	return HandLevel{HighCard, []Rank{Two, Two, Two, Two, Two}}
+}
+
+func (hl HandLevel) PrettyTiebreaks() string {
 	rankStrings := make([]string, len(hl.Tiebreaks))
 	for i, r := range hl.Tiebreaks {
 		rankStrings[i] = r.String()
 	}
+	return strings.Join(rankStrings, ", ")
+}
 
-	return fmt.Sprintf("%v [%v]", hl.Class, strings.Join(rankStrings, ","))
+func (hl HandLevel) String() string {
+	return fmt.Sprintf("%v [%v]", hl.Class, hl.PrettyTiebreaks())
+}
+
+func (hl HandLevel) PrettyPrint() string {
+	switch hl.Class {
+	case StraightFlush:
+		return fmt.Sprintf("Straight Flush: %v high", hl.Tiebreaks[0])
+	case FourOfAKind:
+		return fmt.Sprintf("Four %vs (plus %v)", hl.Tiebreaks[0], hl.Tiebreaks[1])
+	case FullHouse:
+		return fmt.Sprintf("Full house: %vs over %vs", hl.Tiebreaks[0], hl.Tiebreaks[1])
+	case Flush:
+		return fmt.Sprintf("Flush: %v", hl.PrettyTiebreaks())
+	case Straight:
+		return fmt.Sprintf("Straight: %v high", hl.Tiebreaks[0])
+	case ThreeOfAKind:
+		return fmt.Sprintf("Three %vs (plus %v, %v)", hl.Tiebreaks[0], hl.Tiebreaks[1], hl.Tiebreaks[2])
+	case TwoPair:
+		return fmt.Sprintf("Two pair: %vs and %vs (plus %v)", hl.Tiebreaks[0], hl.Tiebreaks[1], hl.Tiebreaks[2])
+	case OnePair:
+		return fmt.Sprintf("Pair %vs (plus %v, %v, %v)", hl.Tiebreaks[0], hl.Tiebreaks[1], hl.Tiebreaks[2], hl.Tiebreaks[3])
+	case HighCard:
+		return fmt.Sprintf("High card: %v", hl.PrettyTiebreaks())
+	default:
+		panic(fmt.Sprintf("Unknown class %v", hl.Class))
+	}
 }
 
 // All the possible sets of ranks which make up straights, starting with the highest-value

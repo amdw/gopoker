@@ -5,7 +5,7 @@ This project comprises some miscellaneous poker-related functions written for fu
 So far, there are the following features:
 
 * a command-line program play_poker.go which randomly generates a large number of five-card poker hands and displays the frequencies of the various hand types
-* a program poker_http.go which starts a HTTP server giving a simple interface to the following:
+* a package poker_http which provides a HTTP server giving a simple interface to the following:
   * "Play", which simulates a single hand of Texas Hold'em with a given number of players and displays the ranking of the hands
   * "Simulate", which allows you to specify a number of known cards (both on the table and in your hand) and simulates a large number of hands of Texas Hold'em to see how likely various possible outcomes are. This is perhaps the most interesting feature, as it gives an estimate of the conditional probabilities of the various game outcomes, given the cards that you know.
 
@@ -17,7 +17,7 @@ An easy way to download and run this code is to clone the repository, add the re
 
     go install gopoker/...
 
-This should build and install both programs in the bin directory. You can then run either ```bin/play_poker``` or ```bin/poker_http```.
+This should build and install both programs in the bin directory. You can then run either ```bin/play_poker``` or ```bin/server```.
 
 To run the tests, you can run:
 

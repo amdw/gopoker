@@ -40,4 +40,23 @@ func TestSimSanity(t *testing.T) {
 	if ourWins+oppWins != simulations {
 		t.Errorf("Our wins and opponent wins sum to %v, expected %v", ourWins+oppWins, simulations)
 	}
+
+	for c, l := range sim.ClassBestHands {
+		if Beats(l, sim.BestHand) {
+			t.Errorf("Best hand %v of class %v better than overall best %v", l, c, sim.BestHand)
+		}
+	}
+	for c, l := range sim.ClassBestOppHands {
+		if Beats(l, sim.BestOppHand) {
+			t.Errorf("Best opponent hand %v of class %v better than overall best %v", l, c, sim.BestOppHand)
+		}
+	}
+	checkTiebreaks := func(tbs []Rank, name string) {
+		if len(tbs) != 5 {
+			t.Errorf("Expected 5 tiebreaks for %v, found %v", name, len(tbs))
+		}
+	}
+	// Catches error with best-hand zero value
+	checkTiebreaks(sim.ClassBestHands[HighCard].Tiebreaks, "high-card best hands")
+	checkTiebreaks(sim.ClassBestOppHands[HighCard].Tiebreaks, "high-card opponent best hands")
 }

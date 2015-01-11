@@ -26,6 +26,11 @@ type Simulator struct {
 	OpponentClassCounts []int
 	ClassWinCounts      []int
 	ClassOppWinCounts   []int
+
+	BestHand          HandLevel
+	BestOppHand       HandLevel
+	ClassBestHands    []HandLevel
+	ClassBestOppHands []HandLevel
 }
 
 func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsToPlay int) {
@@ -35,6 +40,17 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 	s.OpponentClassCounts = make([]int, MAX_HANDCLASS)
 	s.ClassWinCounts = make([]int, MAX_HANDCLASS)
 	s.ClassOppWinCounts = make([]int, MAX_HANDCLASS)
+
+	s.BestHand = MinLevel()
+	s.BestOppHand = MinLevel()
+	s.ClassBestHands = make([]HandLevel, MAX_HANDCLASS)
+	for i := range s.ClassBestHands {
+		s.ClassBestHands[i] = MinLevel()
+	}
+	s.ClassBestOppHands = make([]HandLevel, MAX_HANDCLASS)
+	for i := range s.ClassBestOppHands {
+		s.ClassBestOppHands[i] = MinLevel()
+	}
 
 	p := NewPack()
 	for i := 0; i < handsToPlay; i++ {
@@ -48,5 +64,18 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 		}
 		s.OurClassCounts[ourLevel.Class]++
 		s.OpponentClassCounts[bestOpponentLevel.Class]++
+
+		if Beats(ourLevel, s.BestHand) {
+			s.BestHand = ourLevel
+		}
+		if Beats(bestOpponentLevel, s.BestOppHand) {
+			s.BestOppHand = bestOpponentLevel
+		}
+		if Beats(ourLevel, s.ClassBestHands[ourLevel.Class]) {
+			s.ClassBestHands[ourLevel.Class] = ourLevel
+		}
+		if Beats(bestOpponentLevel, s.ClassBestOppHands[bestOpponentLevel.Class]) {
+			s.ClassBestOppHands[bestOpponentLevel.Class] = bestOpponentLevel
+		}
 	}
 }

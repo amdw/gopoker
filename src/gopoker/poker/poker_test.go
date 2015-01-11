@@ -61,6 +61,7 @@ var levelTests = []LevelTest{
 	{hl(StraightFlush, []Rank{Ace}), hl(StraightFlush, []Rank{Ace}), false, false},
 	{hl(StraightFlush, []Rank{Ace}), hl(StraightFlush, []Rank{King}), true, false},
 	{hl(FourOfAKind, []Rank{Nine, Ten}), hl(StraightFlush, []Rank{Two}), false, true},
+	{MinLevel(), hl(HighCard, []Rank{Two, Two, Two, Two, Three}), false, true},
 }
 
 func TestLevels(t *testing.T) {
