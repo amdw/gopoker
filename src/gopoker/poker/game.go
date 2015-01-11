@@ -117,6 +117,10 @@ func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
 
 // Play out a hand of holdem, and return the table cards, the player cards for each player, and a sorted list of player outcomes.
 func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, outcomes []PlayerOutcome) {
+	if players < 2 {
+		panic(fmt.Sprintf("At least two players required, found %v", players))
+	}
+
 	onTable = p.Cards[0:5]
 
 	playerCards = make([][]Card, players)

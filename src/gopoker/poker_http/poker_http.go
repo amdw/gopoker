@@ -55,6 +55,9 @@ func getPlayers(req *http.Request) (int, error) {
 		}
 		players = int(pl)
 	}
+	if players < 2 {
+		return players, errors.New(fmt.Sprintf("At least two players required, found %v", players))
+	}
 	return players, nil
 }
 
