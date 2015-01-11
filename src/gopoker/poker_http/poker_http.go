@@ -221,7 +221,7 @@ func simulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "th.countTable, td.countTable { border: 1px solid black; padding: 3px; }\n")
 	fmt.Fprintf(w, "td.numcell { text-align: right }\n")
 	fmt.Fprintf(w, "td.zero { color: lightgrey }\n")
-	fmt.Fprintf(w, ".summary { background-color: lightgrey }\n")
+	fmt.Fprintf(w, ".summary { font-weight: bold }\n")
 	fmt.Fprintf(w, "</style>")
 	fmt.Fprintf(w, "</head><body><h1>Texas Hold'em Simulator</h1>")
 
