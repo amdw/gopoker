@@ -127,7 +127,12 @@ func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, ou
 	outcomes = make([]PlayerOutcome, players)
 	for player := 0; player < players; player++ {
 		playerCards[player] = p.Cards[5+2*player : 7+2*player]
-		level, cards := Classify(playerCards[player], onTable)
+		// In Hold'em it is not mandatory to use the cards in your hand,
+		// so they are all optional
+		combinedCards := make([]Card, 7)
+		copy(combinedCards[0:5], onTable)
+		copy(combinedCards[5:7], playerCards[player])
+		level, cards := Classify([]Card{}, combinedCards)
 		outcomes[player] = PlayerOutcome{player + 1, level, cards}
 	}
 

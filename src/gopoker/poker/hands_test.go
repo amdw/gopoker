@@ -91,6 +91,8 @@ func h(cards ...string) []Card {
 	return result
 }
 
+// Actually there are no mandatory cards in Hold'em, but these tests are still valid.
+// This code is indirectly tested in game_test.go, which contains more realistic Hold'em scenarios.
 var classTests = []ClassTest{
 	ClassTest{h("AS", "KS", "QS", "JS", "10S"), h(), HandLevel{StraightFlush, []Rank{Ace}}, h("AS", "KS", "QS", "JS", "10S")},
 	ClassTest{h("9D", "10S", "9S", "9H", "9C"), h(), HandLevel{FourOfAKind, []Rank{Nine, Ten}}, h("9D", "10S", "9S", "9H", "9C")},
