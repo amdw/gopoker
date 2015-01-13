@@ -42,7 +42,7 @@ var gameTests = []GameTest{
 }
 
 func TestHoldem(t *testing.T) {
-	playerCount := 2
+	playerCount := 4
 	for i, testCase := range gameTests {
 		if len(testCase.TableCards) != 5 {
 			t.Fatalf("Wrong number of table cards %v", i)
@@ -88,6 +88,18 @@ func TestHoldem(t *testing.T) {
 		}
 		if !foundPlayer {
 			t.Errorf("Could not find player 1 in outcomes")
+		}
+		for j := 2; j < len(outcomes); j++ {
+			for k := 0; k < j; k++ {
+				prevLevel := outcomes[k].Level
+				thisLevel := outcomes[j].Level
+				if Beats(thisLevel, prevLevel) {
+					t.Errorf("%v beats %v but came after it", thisLevel, prevLevel)
+				}
+				if !Beats(thisLevel, prevLevel) && !Beats(prevLevel, thisLevel) && outcomes[k].Player > outcomes[j].Player {
+					t.Errorf("%v and %v have equal hands (%v, %v) but %v came first", outcomes[k].Player, outcomes[j].Player, outcomes[k].Cards, outcomes[j].Cards, outcomes[k].Player)
+				}
+			}
 		}
 	}
 }
@@ -145,8 +157,8 @@ func TestSimInternalSanity(t *testing.T) {
 				t.Errorf("Simulator says we won but random opponent %v beats our %v", randomOpponentLevel, ourLevel)
 			}
 		} else {
-			if Beats(ourLevel, bestOpponentLevel) {
-				t.Errorf("Simulator says we didn't win but %v beats %v", ourLevel, bestOpponentLevel)
+			if !Beats(bestOpponentLevel, ourLevel) {
+				t.Errorf("Simulator says we lost but their %v doesn't beat our %v", bestOpponentLevel, ourLevel)
 			}
 		}
 	}

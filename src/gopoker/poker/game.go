@@ -45,7 +45,15 @@ func (hs HandSorter) Swap(i, j int) {
 }
 
 func (hs HandSorter) Less(i, j int) bool {
-	return Beats(hs.Outcomes[i].Level, hs.Outcomes[j].Level) && !Beats(hs.Outcomes[j].Level, hs.Outcomes[i].Level)
+	iBeatsJ := Beats(hs.Outcomes[i].Level, hs.Outcomes[j].Level)
+	jBeatsI := Beats(hs.Outcomes[j].Level, hs.Outcomes[i].Level)
+	if iBeatsJ && !jBeatsI {
+		return true
+	}
+	if jBeatsI && !iBeatsJ {
+		return false
+	}
+	return hs.Outcomes[i].Player < hs.Outcomes[j].Player
 }
 
 type Pack struct {
@@ -116,6 +124,7 @@ func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
 }
 
 // Play out a hand of holdem, and return the table cards, the player cards for each player, and a sorted list of player outcomes.
+// Equivalent hands are sorted by player number.
 func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, outcomes []PlayerOutcome) {
 	if players < 2 {
 		panic(fmt.Sprintf("At least two players required, found %v", players))
@@ -146,7 +155,9 @@ func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, ou
 func (p *Pack) SimulateOneHoldemHand(players int) (won bool, ourLevel, bestOpponentLevel, randomOpponentLevel HandLevel) {
 	_, _, outcomes := p.PlayHoldem(players)
 
+	// This works even if player 1 was equal first, since equal hands are sorted by player
 	won = outcomes[0].Player == 1
+
 	var ourOutcome PlayerOutcome
 	opponentOutcomes := make([]PlayerOutcome, players-1)
 	i := 0
