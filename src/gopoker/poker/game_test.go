@@ -21,8 +21,8 @@ var gameTests = []GameTest{
 	GameTest{h("2S", "3S"), h("4C", "4S", "2D", "2H", "3C"), HandLevel{FullHouse, []Rank{Two, Four}}, h("2S", "2D", "2H", "4C", "4S")},
 	GameTest{h("6H", "8H"), h("9H", "10H", "2H", "3S", "7C"), HandLevel{Flush, []Rank{Ten, Nine, Eight, Six, Two}}, h("10H", "9H", "8H", "6H", "2H")},
 	GameTest{h("6S", "8H"), h("9H", "10H", "JH", "QH", "7H"), HandLevel{StraightFlush, []Rank{Queen}}, h("QH", "JH", "10H", "9H", "8H")},
-	GameTest{h("AS", "JH"), h("QC", "KD", "10S", "2C", "3C"), HandLevel{Straight, []Rank{Ace, King, Queen, Jack, Ten}}, h("AS", "KD", "QC", "JH", "10S")},
-	GameTest{h("AS", "3H"), h("2C", "4C", "5D", "KS", "JC"), HandLevel{Straight, []Rank{Five, Four, Three, Two, Ace}}, h("AS", "2C", "3H", "4C", "5D")},
+	GameTest{h("AS", "JH"), h("QC", "KD", "10S", "2C", "3C"), HandLevel{Straight, []Rank{Ace}}, h("AS", "KD", "QC", "JH", "10S")},
+	GameTest{h("AS", "3H"), h("2C", "4C", "5D", "KS", "JC"), HandLevel{Straight, []Rank{Five}}, h("AS", "2C", "3H", "4C", "5D")},
 	GameTest{h("6S", "6D"), h("6C", "KH", "JC", "7H", "2S"), HandLevel{ThreeOfAKind, []Rank{Six, King, Jack}}, h("6S", "6D", "6C", "KH", "JC")},
 	GameTest{h("6S", "2S"), h("6C", "KH", "JC", "7H", "6D"), HandLevel{ThreeOfAKind, []Rank{Six, King, Jack}}, h("6S", "6D", "6C", "KH", "JC")},
 	GameTest{h("6S", "4D"), h("6D", "QS", "4S", "AH", "3C"), HandLevel{TwoPair, []Rank{Six, Four, Ace}}, h("6S", "6D", "4D", "4S", "AH")},
@@ -32,9 +32,9 @@ var gameTests = []GameTest{
 	GameTest{h("2S", "4S"), h("5D", "7S", "8S", "QH", "KH"), HandLevel{HighCard, []Rank{King, Queen, Eight, Seven, Five}}, h("5D", "7S", "8S", "QH", "KH")},
 	GameTest{h("2S", "KH"), h("5D", "7S", "8S", "QH", "4S"), HandLevel{HighCard, []Rank{King, Queen, Eight, Seven, Five}}, h("5D", "7S", "8S", "QH", "KH")},
 	GameTest{h("8S", "KH"), h("5D", "7S", "2S", "QH", "4S"), HandLevel{HighCard, []Rank{King, Queen, Eight, Seven, Five}}, h("5D", "7S", "8S", "QH", "KH")},
-	GameTest{h("KS", "8C"), h("QH", "10C", "9H", "7H", "6S"), HandLevel{Straight, []Rank{Ten, Nine, Eight, Seven, Six}}, h("10C", "9H", "8C", "7H", "6S")},
-	GameTest{h("KS", "10H"), h("8C", "QC", "9H", "7H", "6S"), HandLevel{Straight, []Rank{Ten, Nine, Eight, Seven, Six}}, h("10H", "9H", "8C", "7H", "6S")},
-	GameTest{h("KS", "10H"), h("8C", "5C", "9H", "7H", "6S"), HandLevel{Straight, []Rank{Ten, Nine, Eight, Seven, Six}}, h("10H", "9H", "8C", "7H", "6S")},
+	GameTest{h("KS", "8C"), h("QH", "10C", "9H", "7H", "6S"), HandLevel{Straight, []Rank{Ten}}, h("10C", "9H", "8C", "7H", "6S")},
+	GameTest{h("KS", "10H"), h("8C", "QC", "9H", "7H", "6S"), HandLevel{Straight, []Rank{Ten}}, h("10H", "9H", "8C", "7H", "6S")},
+	GameTest{h("KS", "10H"), h("8C", "5C", "9H", "7H", "6S"), HandLevel{Straight, []Rank{Ten}}, h("10H", "9H", "8C", "7H", "6S")},
 	// Uses none of the hand cards
 	GameTest{h("2S", "3S"), h("AH", "10H", "JH", "QH", "KH"), HandLevel{StraightFlush, []Rank{Ace}}, h("AH", "KH", "QH", "JH", "10H")},
 	// Uses one of the hand cards

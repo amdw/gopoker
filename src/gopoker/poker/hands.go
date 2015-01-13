@@ -466,8 +466,7 @@ func classifyStraight(cards []Card, countsByRank []int) (hl HandLevel, ok bool) 
 			}
 		}
 		if straightRealised {
-			// FIXME Make this consistent with straight flush by just returning the high rank
-			return HandLevel{Straight, straight}, true
+			return HandLevel{Straight, straight[0:1]}, true
 		}
 	}
 	return noLevel, false
