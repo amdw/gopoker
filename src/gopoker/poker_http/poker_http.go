@@ -167,6 +167,13 @@ func formatPct(num, denom int) string {
 	return result
 }
 
+type playerStats struct {
+	ClassFreq     int
+	WinCount      int
+	JointWinCount int
+	BestHand      string
+}
+
 func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	cssClass := func(isNum, isZero bool) string {
 		result := "countTable"
@@ -194,30 +201,29 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		}
 		fmt.Fprintf(w, `<th class="countTable"%v>%v</th>`, colspanStr, content)
 	}
-	// FIXME Refactor this method argument list into groups
-	printRow := func(handClass string, classFreq, winCount, jointWinCount, bestOppCount, bestOppWinCount, randOppCount, randOppWinCount int, bestHand, bestOppHand string, isSummary bool) {
+	printRow := func(handClass string, yourStats, bestOppStats, randOppStats playerStats, isSummary bool) {
 		cssClass := ""
 		if isSummary {
 			cssClass = ` class="summary"`
 		}
 		fmt.Fprintf(w, `<tr%v>`, cssClass)
 		printStringCell(handClass)
-		printNumCell(classFreq)
-		printPctCell(classFreq, simulator.HandCount)
-		printNumCell(winCount)
-		printPctCell(winCount, simulator.HandCount)
-		printNumCell(jointWinCount)
-		printPctCell(jointWinCount, simulator.HandCount)
-		printStringCell(bestHand)
-		printNumCell(bestOppCount)
-		printPctCell(bestOppCount, simulator.HandCount)
-		printNumCell(bestOppWinCount)
-		printPctCell(bestOppWinCount, simulator.HandCount)
-		printStringCell(bestOppHand)
-		printNumCell(randOppCount)
-		printPctCell(randOppCount, simulator.HandCount)
-		printNumCell(randOppWinCount)
-		printPctCell(randOppWinCount, simulator.HandCount)
+		printNumCell(yourStats.ClassFreq)
+		printPctCell(yourStats.ClassFreq, simulator.HandCount)
+		printNumCell(yourStats.WinCount)
+		printPctCell(yourStats.WinCount, simulator.HandCount)
+		printNumCell(yourStats.JointWinCount)
+		printPctCell(yourStats.JointWinCount, simulator.HandCount)
+		printStringCell(yourStats.BestHand)
+		printNumCell(bestOppStats.ClassFreq)
+		printPctCell(bestOppStats.ClassFreq, simulator.HandCount)
+		printNumCell(bestOppStats.WinCount)
+		printPctCell(bestOppStats.WinCount, simulator.HandCount)
+		printStringCell(bestOppStats.BestHand)
+		printNumCell(randOppStats.ClassFreq)
+		printPctCell(randOppStats.ClassFreq, simulator.HandCount)
+		printNumCell(randOppStats.WinCount)
+		printPctCell(randOppStats.WinCount, simulator.HandCount)
 		fmt.Fprintf(w, "</tr>")
 	}
 	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th>`)
@@ -235,7 +241,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	printHeadCell("Freq", 2)
 	printHeadCell("Wins", 2)
 	fmt.Fprintf(w, `</tr>`)
-	printRow("All", simulator.HandCount, simulator.WinCount, simulator.JointWinCount, simulator.HandCount, simulator.BestOpponentWinCount, simulator.HandCount, simulator.RandomOpponentWinCount, simulator.BestHand.PrettyPrint(), simulator.BestOppHand.PrettyPrint(), true)
+	printRow("All", playerStats{simulator.HandCount, simulator.WinCount, simulator.JointWinCount, simulator.BestHand.PrettyPrint()}, playerStats{simulator.HandCount, simulator.BestOpponentWinCount, -1, simulator.BestOppHand.PrettyPrint()}, playerStats{simulator.HandCount, simulator.RandomOpponentWinCount, -1, ""}, true)
 	for class := range simulator.OurClassCounts {
 		bestHand := ""
 		if simulator.OurClassCounts[class] > 0 {
@@ -245,7 +251,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		if simulator.BestOpponentClassCounts[class] > 0 {
 			bestOppHand = simulator.ClassBestOppHands[class].PrettyPrint()
 		}
-		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.ClassJointWinCounts[class], simulator.BestOpponentClassCounts[class], simulator.ClassBestOppWinCounts[class], simulator.RandomOpponentClassCounts[class], simulator.ClassRandOppWinCounts[class], bestHand, bestOppHand, false)
+		printRow(poker.HandClass(class).String(), playerStats{simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.ClassJointWinCounts[class], bestHand}, playerStats{simulator.BestOpponentClassCounts[class], simulator.ClassBestOppWinCounts[class], -1, bestOppHand}, playerStats{simulator.RandomOpponentClassCounts[class], simulator.ClassRandOppWinCounts[class], -1, ""}, false)
 	}
 	fmt.Fprintf(w, "</table>")
 }
