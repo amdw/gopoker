@@ -31,6 +31,7 @@ type Simulator struct {
 	RandomOpponentClassCounts []int
 
 	ClassWinCounts        []int
+	ClassJointWinCounts   []int
 	ClassBestOppWinCounts []int
 	ClassRandOppWinCounts []int
 
@@ -52,6 +53,7 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 	s.RandomOpponentClassCounts = make([]int, MAX_HANDCLASS)
 
 	s.ClassWinCounts = make([]int, MAX_HANDCLASS)
+	s.ClassJointWinCounts = make([]int, MAX_HANDCLASS)
 	s.ClassBestOppWinCounts = make([]int, MAX_HANDCLASS)
 	s.ClassRandOppWinCounts = make([]int, MAX_HANDCLASS)
 
@@ -80,6 +82,7 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 		}
 		if won && opponentWon {
 			s.JointWinCount++
+			s.ClassJointWinCounts[ourLevel.Class]++
 		}
 		if !Beats(ourLevel, randomOpponentLevel) && !Beats(bestOpponentLevel, randomOpponentLevel) {
 			// The random opponent did at least as well as the winner

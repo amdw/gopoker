@@ -194,7 +194,8 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		}
 		fmt.Fprintf(w, `<th class="countTable"%v>%v</th>`, colspanStr, content)
 	}
-	printRow := func(handClass string, classFreq, winCount, bestOppCount, bestOppWinCount, randOppCount, randOppWinCount int, bestHand, bestOppHand string, isSummary bool) {
+	// FIXME Refactor this method argument list into groups
+	printRow := func(handClass string, classFreq, winCount, jointWinCount, bestOppCount, bestOppWinCount, randOppCount, randOppWinCount int, bestHand, bestOppHand string, isSummary bool) {
 		cssClass := ""
 		if isSummary {
 			cssClass = ` class="summary"`
@@ -205,6 +206,8 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		printPctCell(classFreq, simulator.HandCount)
 		printNumCell(winCount)
 		printPctCell(winCount, simulator.HandCount)
+		printNumCell(jointWinCount)
+		printPctCell(jointWinCount, simulator.HandCount)
 		printStringCell(bestHand)
 		printNumCell(bestOppCount)
 		printPctCell(bestOppCount, simulator.HandCount)
@@ -218,12 +221,13 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		fmt.Fprintf(w, "</tr>")
 	}
 	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th>`)
-	printHeadCell("For you", 5)
+	printHeadCell("For you", 7)
 	printHeadCell("For best opponent", 5)
 	printHeadCell("For random opponent", 5)
 	fmt.Fprintf(w, `</tr><tr>`)
 	printHeadCell("Freq", 2)
 	printHeadCell("Wins", 2)
+	printHeadCell("Joint wins", 2)
 	printHeadCell("Best hand", 1)
 	printHeadCell("Freq", 2)
 	printHeadCell("Wins", 2)
@@ -231,7 +235,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	printHeadCell("Freq", 2)
 	printHeadCell("Wins", 2)
 	fmt.Fprintf(w, `</tr>`)
-	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, simulator.BestOpponentWinCount, simulator.HandCount, simulator.RandomOpponentWinCount, simulator.BestHand.PrettyPrint(), simulator.BestOppHand.PrettyPrint(), true)
+	printRow("All", simulator.HandCount, simulator.WinCount, simulator.JointWinCount, simulator.HandCount, simulator.BestOpponentWinCount, simulator.HandCount, simulator.RandomOpponentWinCount, simulator.BestHand.PrettyPrint(), simulator.BestOppHand.PrettyPrint(), true)
 	for class := range simulator.OurClassCounts {
 		bestHand := ""
 		if simulator.OurClassCounts[class] > 0 {
@@ -241,7 +245,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		if simulator.BestOpponentClassCounts[class] > 0 {
 			bestOppHand = simulator.ClassBestOppHands[class].PrettyPrint()
 		}
-		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.BestOpponentClassCounts[class], simulator.ClassBestOppWinCounts[class], simulator.RandomOpponentClassCounts[class], simulator.ClassRandOppWinCounts[class], bestHand, bestOppHand, false)
+		printRow(poker.HandClass(class).String(), simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.ClassJointWinCounts[class], simulator.BestOpponentClassCounts[class], simulator.ClassBestOppWinCounts[class], simulator.RandomOpponentClassCounts[class], simulator.ClassRandOppWinCounts[class], bestHand, bestOppHand, false)
 	}
 	fmt.Fprintf(w, "</table>")
 }
