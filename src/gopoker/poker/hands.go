@@ -322,7 +322,7 @@ func Beats(h1 HandLevel, h2 HandLevel) bool {
 }
 
 // Simple linear search
-func containsAllCards(cards []Card, testSubset []Card) bool {
+func containsAllCards(cards, testSubset []Card) bool {
 	for _, tc := range testSubset {
 		found := false
 		for _, c := range cards {
