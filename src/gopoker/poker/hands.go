@@ -621,7 +621,6 @@ func allChoices(cards []Card, num int) [][]Card {
 
 // Classifies a poker hand composed of some mandatory cards (which MUST be in the constructed hand)
 // and some optional cards (which MAY be used to construct the hand).
-// For example, for Texas Hold'em, there will be two mandatory cards and five optional ones.
 func Classify(mandatory, optional []Card) (HandLevel, []Card) {
 	// Construct all possible hands and find the best one
 	allPossibleOptionals := allChoices(optional, 5-len(mandatory))
