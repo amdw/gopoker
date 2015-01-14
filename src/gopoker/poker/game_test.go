@@ -89,7 +89,7 @@ func TestHoldem(t *testing.T) {
 		if !foundPlayer {
 			t.Errorf("Could not find player 1 in outcomes")
 		}
-		for j := 2; j < len(outcomes); j++ {
+		for j := 1; j < len(outcomes); j++ {
 			for k := 0; k < j; k++ {
 				prevLevel := outcomes[k].Level
 				thisLevel := outcomes[j].Level
