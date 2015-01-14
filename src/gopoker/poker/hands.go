@@ -625,12 +625,18 @@ func Classify(mandatory, optional []Card) (HandLevel, []Card) {
 	// Construct all possible hands and find the best one
 	allPossibleOptionals := allChoices(optional, 5-len(mandatory))
 
-	allPossibleHands := make([][]Card, len(allPossibleOptionals))
-	for i, os := range allPossibleOptionals {
-		hand := make([]Card, 5)
-		copy(hand[0:len(mandatory)], mandatory)
-		copy(hand[len(mandatory):], os)
-		allPossibleHands[i] = hand
+	var allPossibleHands [][]Card
+	if len(mandatory) == 0 {
+		// Performance optimisation to avoid copying in this special case
+		allPossibleHands = allPossibleOptionals
+	} else {
+		allPossibleHands = make([][]Card, len(allPossibleOptionals))
+		for i, os := range allPossibleOptionals {
+			hand := make([]Card, 5)
+			copy(hand[0:len(mandatory)], mandatory)
+			copy(hand[len(mandatory):], os)
+			allPossibleHands[i] = hand
+		}
 	}
 
 	bestHand := allPossibleHands[0]
