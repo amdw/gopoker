@@ -38,8 +38,14 @@ func TestSimSanity(t *testing.T) {
 	checkCounts(sim.RandomOpponentClassCounts, true, "RandomOpponentClassCounts")
 	ourWins := checkCounts(sim.ClassWinCounts, false, "ClassWinCounts")
 	bestOppWins := checkCounts(sim.ClassBestOppWinCounts, false, "ClassBestOppWinCounts")
-	if ourWins+bestOppWins != simulations {
-		t.Errorf("Our wins and opponent wins sum to %v, expected %v", ourWins+bestOppWins, simulations)
+	if ourWins != sim.WinCount {
+		t.Errorf("Class win counts should sum to %v, found %v", sim.WinCount, ourWins)
+	}
+	if bestOppWins != sim.BestOpponentWinCount {
+		t.Errorf("Best opponent win counts should sum to %v, found %v", sim.BestOpponentWinCount, bestOppWins)
+	}
+	if ourWins+bestOppWins-sim.JointWinCount != simulations {
+		t.Errorf("Our wins (%v) and opponent wins (%v) minus joint wins (%v) sum to %v, expected %v", ourWins, bestOppWins, sim.JointWinCount, ourWins+bestOppWins-sim.JointWinCount, simulations)
 	}
 	randOppWins := checkCounts(sim.ClassRandOppWinCounts, false, "ClassRandOppWinCounts")
 	if randOppWins != sim.RandomOpponentWinCount {

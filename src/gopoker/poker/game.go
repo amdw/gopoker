@@ -152,7 +152,7 @@ func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, ou
 }
 
 // Play out one hand of Texas Hold'em and return whether or not player 1 won, plus player 1's hand level, plus the best hand level of any of player 1's opponents.
-func (p *Pack) SimulateOneHoldemHand(players int) (won bool, ourLevel, bestOpponentLevel, randomOpponentLevel HandLevel) {
+func (p *Pack) SimulateOneHoldemHand(players int) (won, opponentWon bool, ourLevel, bestOpponentLevel, randomOpponentLevel HandLevel) {
 	_, _, outcomes := p.PlayHoldem(players)
 
 	// This works even if player 1 was equal first, since equal hands are sorted by player
@@ -170,9 +170,11 @@ func (p *Pack) SimulateOneHoldemHand(players int) (won bool, ourLevel, bestOppon
 		}
 	}
 
+	opponentWon = !Beats(ourOutcome.Level, opponentOutcomes[0].Level)
+
 	randomOpponentLevel = opponentOutcomes[p.randGen.Intn(len(opponentOutcomes))].Level
 
-	return won, ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel
+	return won, opponentWon, ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel
 }
 
 func NewPack() Pack {

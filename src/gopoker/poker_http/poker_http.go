@@ -231,7 +231,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	printHeadCell("Freq", 2)
 	printHeadCell("Wins", 2)
 	fmt.Fprintf(w, `</tr>`)
-	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, simulator.HandCount-simulator.WinCount, simulator.HandCount, simulator.RandomOpponentWinCount, simulator.BestHand.PrettyPrint(), simulator.BestOppHand.PrettyPrint(), true)
+	printRow("All", simulator.HandCount, simulator.WinCount, simulator.HandCount, simulator.BestOpponentWinCount, simulator.HandCount, simulator.RandomOpponentWinCount, simulator.BestHand.PrettyPrint(), simulator.BestOppHand.PrettyPrint(), true)
 	for class := range simulator.OurClassCounts {
 		bestHand := ""
 		if simulator.OurClassCounts[class] > 0 {

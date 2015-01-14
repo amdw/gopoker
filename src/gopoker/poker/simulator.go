@@ -22,6 +22,8 @@ package poker
 type Simulator struct {
 	HandCount              int
 	WinCount               int
+	JointWinCount          int
+	BestOpponentWinCount   int
 	RandomOpponentWinCount int
 
 	OurClassCounts            []int
@@ -41,6 +43,8 @@ type Simulator struct {
 func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsToPlay int) {
 	s.HandCount = handsToPlay
 	s.WinCount = 0
+	s.JointWinCount = 0
+	s.BestOpponentWinCount = 0
 	s.RandomOpponentWinCount = 0
 
 	s.OurClassCounts = make([]int, MAX_HANDCLASS)
@@ -65,17 +69,22 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 	p := NewPack()
 	for i := 0; i < handsToPlay; i++ {
 		p.shuffleFixing(tableCards, yourCards)
-		won, ourLevel, bestOpponentLevel, randomOpponentLevel := p.SimulateOneHoldemHand(players)
+		won, opponentWon, ourLevel, bestOpponentLevel, randomOpponentLevel := p.SimulateOneHoldemHand(players)
 		if won {
 			s.WinCount++
 			s.ClassWinCounts[ourLevel.Class]++
-		} else {
+		}
+		if opponentWon {
+			s.BestOpponentWinCount++
 			s.ClassBestOppWinCounts[bestOpponentLevel.Class]++
-			if !Beats(bestOpponentLevel, randomOpponentLevel) {
-				// The random opponent did at least as well as the winner
-				s.RandomOpponentWinCount++
-				s.ClassRandOppWinCounts[randomOpponentLevel.Class]++
-			}
+		}
+		if won && opponentWon {
+			s.JointWinCount++
+		}
+		if !Beats(ourLevel, randomOpponentLevel) && !Beats(bestOpponentLevel, randomOpponentLevel) {
+			// The random opponent did at least as well as the winner
+			s.RandomOpponentWinCount++
+			s.ClassRandOppWinCounts[randomOpponentLevel.Class]++
 		}
 		s.OurClassCounts[ourLevel.Class]++
 		s.BestOpponentClassCounts[bestOpponentLevel.Class]++
