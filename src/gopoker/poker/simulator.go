@@ -19,7 +19,13 @@ along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 */
 package poker
 
+import (
+	"errors"
+	"fmt"
+)
+
 type Simulator struct {
+	Players                int
 	HandCount              int
 	WinCount               int
 	JointWinCount          int
@@ -42,6 +48,7 @@ type Simulator struct {
 }
 
 func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsToPlay int) {
+	s.Players = players
 	s.HandCount = handsToPlay
 	s.WinCount = 0
 	s.JointWinCount = 0
@@ -106,4 +113,37 @@ func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsT
 			s.ClassBestOppHands[bestOpponentLevel.Class] = bestOpponentLevel
 		}
 	}
+}
+
+type StartingPair struct {
+	Rank1, Rank2 Rank
+	SameSuit     bool
+}
+
+func (pair StartingPair) Validate() error {
+	if pair.Rank1 == pair.Rank2 && pair.SameSuit {
+		return errors.New(fmt.Sprintf("Pair of %vs cannot be the same suit!", pair.Rank1))
+	}
+	return nil
+}
+
+func (pair StartingPair) SampleCards() (Card, Card) {
+	err := pair.Validate()
+	if err != nil {
+		panic(err)
+	}
+	// Just pick arbitrary suits, either the same or different
+	card1 := Card{pair.Rank1, Club}
+	card2 := Card{pair.Rank2, Heart}
+	if pair.SameSuit {
+		card2.Suit = Club
+	}
+	return card1, card2
+}
+
+func (pair StartingPair) RunSimulation(players, handsToPlay int) Simulator {
+	card1, card2 := pair.SampleCards()
+	result := Simulator{}
+	result.SimulateHoldem([]Card{card1, card2}, []Card{}, players, handsToPlay)
+	return result
 }

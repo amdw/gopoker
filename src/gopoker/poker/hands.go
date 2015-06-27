@@ -133,16 +133,10 @@ func (c Card) HTML() string {
 	return fmt.Sprintf("%v%v", c.Rank.String(), c.Suit.HTML())
 }
 
-// Construct a card from text, e.g. "QD" for queen of diamonds
-func MakeCard(c string) (Card, error) {
-	re := regexp.MustCompile("^([0123456789AJQK]+)([CDHS])$")
-	match := re.FindStringSubmatch(strings.ToUpper(c))
-	if match == nil {
-		return Card{}, errors.New(fmt.Sprintf("Illegally formatted card %q", c))
-	}
-
+// Construct a rank from text
+func MakeRank(r string) (Rank, error) {
 	var rank Rank
-	switch match[1] {
+	switch r {
 	case "2":
 		rank = Two
 	case "3":
@@ -169,6 +163,23 @@ func MakeCard(c string) (Card, error) {
 		rank = King
 	case "A":
 		rank = Ace
+	default:
+		return 0, errors.New(fmt.Sprintf("Illegally formatted rank '%q'", r))
+	}
+	return rank, nil
+}
+
+// Construct a card from text, e.g. "QD" for queen of diamonds
+func MakeCard(c string) (Card, error) {
+	re := regexp.MustCompile("^([0123456789AJQK]+)([CDHS])$")
+	match := re.FindStringSubmatch(strings.ToUpper(c))
+	if match == nil {
+		return Card{}, errors.New(fmt.Sprintf("Illegally formatted card %q", c))
+	}
+
+	rank, err := MakeRank(match[1])
+	if err != nil {
+		return Card{}, err
 	}
 
 	var suit Suit

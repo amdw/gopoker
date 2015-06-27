@@ -33,6 +33,7 @@ func Menu(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<html><head><title>Poker</title></head><body><h1>Poker</h1><ul>")
 	fmt.Fprintf(w, `<li><a href="/play">Play</a></li>`)
 	fmt.Fprintf(w, `<li><a href="/simulate">Simulate</a></li>`)
+	fmt.Fprintf(w, `<li><a href="/startingcards">Starting cards</a></li>`)
 	fmt.Fprintf(w, "</ul></body></html>")
 }
 

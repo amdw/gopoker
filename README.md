@@ -8,6 +8,7 @@ So far, there are the following features:
 * a package poker_http which provides a HTTP server giving a simple interface to the following:
   * "Play", which simulates a single hand of Texas Hold'em with a given number of players and displays the ranking of the hands
   * "Simulate", which allows you to specify a number of known cards (both on the table and in your hand) and simulates a large number of hands of Texas Hold'em to see how likely various possible outcomes are. This is perhaps the most interesting feature, as it gives an estimate of the conditional probabilities of the various game outcomes, given the cards that you know.
+  * "Starting cards", which compares the win probabilities from holding different starting pairs in Texas Hold'em. Simulations are done concurrently and inserted into the page in real-time using Angular.JS.
 
 # Installing and Running
 

@@ -4,10 +4,10 @@ import (
 	"testing"
 )
 
-func TestSimSanity(t *testing.T) {
-	sim := Simulator{}
-	simulations := 10000
-	sim.SimulateHoldem([]Card{}, []Card{}, 5, simulations)
+func assertSimSanity(sim Simulator, players, simulations int, t *testing.T) {
+	if sim.Players != players {
+		t.Errorf("Expected %v players, found %v", players, sim.Players)
+	}
 	if sim.HandCount != simulations {
 		t.Errorf("Expected %v found %v for HandCount", simulations, sim.HandCount)
 	}
@@ -77,4 +77,22 @@ func TestSimSanity(t *testing.T) {
 	// Catches error with best-hand zero value
 	checkTiebreaks(sim.ClassBestHands[HighCard].Tiebreaks, "high-card best hands")
 	checkTiebreaks(sim.ClassBestOppHands[HighCard].Tiebreaks, "high-card opponent best hands")
+}
+
+func TestSimSanity(t *testing.T) {
+	sim := Simulator{}
+	players := 5
+	simulations := 10000
+	sim.SimulateHoldem([]Card{}, []Card{}, players, simulations)
+	assertSimSanity(sim, players, simulations, t)
+}
+
+func TestPairs(t *testing.T) {
+	pairs := []StartingPair{StartingPair{King, Queen, false}, StartingPair{King, Queen, true}, StartingPair{King, King, false}}
+	players := 6
+	simCount := 1000
+	for _, pair := range pairs {
+		sim := pair.RunSimulation(players, simCount)
+		assertSimSanity(sim, players, simCount, t)
+	}
 }
