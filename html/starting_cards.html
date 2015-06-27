@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head><title>Texas Hold'em starting cards</title>
+<style>
+table.resultTable { border-collapse: collapse }
+th.resultTable, td.resultTable { border: 1px solid black; padding: 3px }
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.16/angular.min.js"></script>
+</head><body>
+
+<div ng-app="startingCardsApp" ng-controller="StartingCardsController">
+<h1>Texas Hold'em starting cards</h1>
+<table>
+<tr><td>Players</td><td><input type="text" ng-model="players"/></td></tr>
+<tr><td>Hands to simulate</td><td><input type="text" ng-model="handsToPlay"/></td></tr>
+<tr><td><button ng-click="simulate()" ng-disabled="started">Simulate</button></td><td>Simulation {{status()}}</td></tr>
+</table>
+<h2>Results</h2>
+<table class="resultTable">
+<tr><th rowspan="2" class="resultTable">Cards</th><th colspan="3" class="resultTable">Win probability (versus prior)</th></tr>
+<tr><th class="resultTable">You</th><th class="resultTable">Best opponent</th><th class="resultTable">Random opponent</th></tr>
+<tr ng-repeat="result in results">
+<td class="resultTable">{{result.Cards}}</td>
+<td class="resultTable">{{(100 * result.WinCount / result.HandCount) | number : 1}}% ({{result.WinCount / (result.HandCount / players) | number : 2}})</td>
+<td class="resultTable">{{(100 * result.BestOpponentWinCount / result.HandCount) | number : 1}}% ({{result.BestOpponentWinCount / (result.HandCount * (players - 1) / players) | number : 2}})</td>
+<td class="resultTable">{{(100 * result.RandomOpponentWinCount / result.HandCount) | number : 1}}% ({{result.RandomOpponentWinCount / (result.HandCount / players) | number : 2}})</td>
+</tr>
+</table>
+</div>
+
+<script>
+var app = angular.module('startingCardsApp', []);
+
+app.controller('StartingCardsController', function($scope, $http) {
+    $scope.players = 7;
+    $scope.handsToPlay = 10000;
+    $scope.results = [];
+    $scope.started = false;
+    $scope.requestsMade = 0;
+    $scope.resultsPending = 0;
+    $scope.errors = 0;
+
+    $scope.status = function() {
+        if (!$scope.started) { return "not started"; }
+        if ($scope.resultsPending > 0) {
+            return "in progress (" + $scope.resultsPending + " of " + $scope.requestsMade + " requests pending" + ($scope.errors > 0 ? ("; " + $scope.errors + " errors - see console for details") : "") + ")"; }
+        return "complete (reload page to restart)";
+    };
+
+    $scope.simulateOne = function(rank1, rank2, samesuit) {
+        var url = "/startingcards/sim?rank1=" + rank1 + "&rank2=" + rank2 + "&samesuit=" + samesuit + "&players=" + $scope.players + "&handstoplay=" + $scope.handsToPlay;
+        $http.get(url).success(function (response) {
+            $scope.onResult(rank1, rank2, samesuit, response);
+        }).error(function (response, status) {
+            $scope.onError(rank1, rank2, samesuit, response, status);
+        });
+        $scope.requestsMade += 1;
+        $scope.resultsPending += 1;
+    };
+
+    $scope.simulate = function() {
+        $scope.started = true;
+        var ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+        // JavaScript "for (i in ranks)" results in i being a string!?!?
+        for (i = 0; i < ranks.length; i++) {
+            for (j = 0; j < ranks.length; j++) {
+                if (j > i) { break; } // Avoid duplicates
+                $scope.simulateOne(ranks[i], ranks[j], false);
+                if (i != j) {
+                    $scope.simulateOne(ranks[i], ranks[j], true);
+                }
+            }
+        }
+    };
+
+    $scope.onResult = function (rank1, rank2, samesuit, result) {
+        result.Cards = rank1 + rank2 + (samesuit ? "s" : "");
+        $scope.results.push(result);
+        $scope.results.sort(function(a,b) {return b.WinCount - a.WinCount});
+        $scope.resultsPending -= 1;
+    };
+
+    $scope.onError = function (rank1, rank2, samesuit, error, status) {
+        $scope.errors += 1;
+        console.log("Got error for " + rank1 + rank2 + samesuit + ": " + status + "\n" + JSON.stringify(error));
+    };
+});
+</script>
+
+</body></html>

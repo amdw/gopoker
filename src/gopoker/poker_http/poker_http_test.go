@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopoker/poker"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"testing"
 )
 
@@ -41,9 +44,22 @@ func TestStartingCardsHome(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
-	StartingCards(rec, req)
+	// Create a temp dir to hold the HTML (doesn't matter that it's not real HTML)
+	// This is easier than locating the actual HTML file reliably...
+	dir, err := ioutil.TempDir("", "gopokerhtml")
+	if err != nil {
+		t.Fatalf("Could not create temp dir for HTML: %v", err)
+	}
+	defer os.RemoveAll(dir)
+	t.Log("Created temp dir", dir)
+	filename := path.Join(dir, "starting_cards.html")
+	err = ioutil.WriteFile(filename, []byte("temp html"), 0644)
+	if err != nil {
+		t.Fatalf("Could not write temp HTML file %v: %v", filename, err)
+	}
+	StartingCards(dir)(rec, req)
 	if rec.Code != 200 {
-		t.Errorf("Got HTTP error %v", rec.Code)
+		t.Errorf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
 	}
 }
 

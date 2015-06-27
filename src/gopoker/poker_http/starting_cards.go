@@ -23,8 +23,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopoker/poker"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"path"
 	"strconv"
 )
 
@@ -33,86 +35,16 @@ const rank2Key = "rank2"
 const sameSuitKey = "samesuit"
 const handsToPlayKey = "handstoplay"
 
-func StartingCards(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintln(w, `<!DOCTYPE html>`)
-	fmt.Fprintln(w, `<html>`)
-	fmt.Fprintln(w, `<head><title>Texas Hold'em starting cards</title>`)
-	fmt.Fprintln(w, `<style>`)
-	fmt.Fprintln(w, `table.resultTable { border-collapse: collapse }`)
-	fmt.Fprintln(w, `th.resultTable, td.resultTable { border: 1px solid black; padding: 3px }`)
-	fmt.Fprintln(w, `</style>`)
-	fmt.Fprintln(w, `<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.16/angular.min.js"></script>`)
-	fmt.Fprintln(w, `</head><body>`)
-
-	fmt.Fprintln(w, `<div ng-app="startingCardsApp" ng-controller="StartingCardsController">`)
-	fmt.Fprintln(w, `<h1>Texas Hold'em starting cards</h1>`)
-	fmt.Fprintln(w, `<table>`)
-	fmt.Fprintln(w, `<tr><td>Players</td><td><input type="text" ng-model="players"/></td></tr>`)
-	fmt.Fprintln(w, `<tr><td>Hands to simulate</td><td><input type="text" ng-model="handsToPlay"/></td></tr>`)
-	fmt.Fprintln(w, `<tr><td><button ng-click="simulate()" ng-disabled="started">Simulate</button></td><td>Simulation {{status()}}</td></tr>`)
-	fmt.Fprintln(w, `</table>`)
-	fmt.Fprintln(w, `<h2>Results</h2>`)
-	fmt.Fprintln(w, `<table class="resultTable">`)
-	fmt.Fprintln(w, `<tr><th rowspan="2" class="resultTable">Cards</th><th colspan="3" class="resultTable">Win probability (versus prior)</th></tr>`)
-	fmt.Fprintln(w, `<tr><th class="resultTable">You</th><th class="resultTable">Best opponent</th><th class="resultTable">Random opponent</th></tr>`)
-	fmt.Fprintln(w, `<tr ng-repeat="result in results">`)
-	fmt.Fprintln(w, `<td class="resultTable">{{result.Cards}}</td>`)
-	fmt.Fprintln(w, `<td class="resultTable">{{(100 * result.WinCount / result.HandCount) | number : 1}}% ({{result.WinCount / (result.HandCount / players) | number : 2}})</td>`)
-	fmt.Fprintln(w, `<td class="resultTable">{{(100 * result.BestOpponentWinCount / result.HandCount) | number : 1}}% ({{result.BestOpponentWinCount / (result.HandCount * (players - 1) / players) | number : 2}})</td>`)
-	fmt.Fprintln(w, `<td class="resultTable">{{(100 * result.RandomOpponentWinCount / result.HandCount) | number : 1}}% ({{result.RandomOpponentWinCount / (result.HandCount / players) | number : 2}})</td>`)
-	fmt.Fprintln(w, `</tr>`)
-	fmt.Fprintln(w, `</table>`)
-	fmt.Fprintln(w, `</div>`)
-
-	fmt.Fprintln(w, `<script>`)
-	fmt.Fprintln(w, `var app = angular.module('startingCardsApp', []);`)
-
-	fmt.Fprintln(w, `app.controller('StartingCardsController', function($scope, $http) {`)
-	fmt.Fprintln(w, `$scope.players = 7;`)
-	fmt.Fprintln(w, `$scope.handsToPlay = 10000;`)
-	fmt.Fprintln(w, `$scope.results = [];`)
-	fmt.Fprintln(w, `$scope.started = false;`)
-	fmt.Fprintln(w, `$scope.requestsMade = 0;`)
-	fmt.Fprintln(w, `$scope.resultsPending = 0;`)
-	fmt.Fprintln(w, `$scope.errors = 0;`)
-	fmt.Fprintln(w, `$scope.status = function() {`)
-	fmt.Fprintln(w, `if (!$scope.started) { return "not started"; }`)
-	fmt.Fprintln(w, `if ($scope.resultsPending > 0) {`)
-	fmt.Fprintln(w, `return "in progress (" + $scope.resultsPending + " of " + $scope.requestsMade + " requests pending" + ($scope.errors > 0 ? ("; " + $scope.errors + " errors - see console for details") : "") + ")"; }`)
-	fmt.Fprintln(w, `return "complete (reload page to restart)";`)
-	fmt.Fprintln(w, `};`)
-	fmt.Fprintln(w, `$scope.simulateOne = function(rank1, rank2, samesuit) {`)
-	fmt.Fprintln(w, `var url = "/startingcards/sim?rank1=" + rank1 + "&rank2=" + rank2 + "&samesuit=" + samesuit + "&players=" + $scope.players + "&handstoplay=" + $scope.handsToPlay;`)
-	fmt.Fprintln(w, `$http.get(url).success(function (response) {$scope.onResult(rank1, rank2, samesuit, response)}).error(function (response, status) {$scope.onError(rank1, rank2, samesuit, response, status)});`)
-	fmt.Fprintln(w, `$scope.requestsMade += 1;`)
-	fmt.Fprintln(w, `$scope.resultsPending += 1;`)
-	fmt.Fprintln(w, `}`)
-	fmt.Fprintln(w, `$scope.simulate = function() {`)
-	fmt.Fprintln(w, `$scope.started = true;`)
-	fmt.Fprintln(w, `var ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];`)
-	// JavaScript "for (i in ranks)" results in i being a string!?!?
-	fmt.Fprintln(w, `for (i = 0; i < ranks.length; i++) {`)
-	fmt.Fprintln(w, `for (j = 0; j < ranks.length; j++) {`)
-	fmt.Fprintln(w, `if (j > i) { break; } // Avoid duplicates`)
-	fmt.Fprintln(w, `$scope.simulateOne(ranks[i], ranks[j], false);`)
-	fmt.Fprintln(w, `if (i != j) { $scope.simulateOne(ranks[i], ranks[j], true); }`)
-	fmt.Fprintln(w, `}`)
-	fmt.Fprintln(w, `}`)
-	fmt.Fprintln(w, `};`)
-	fmt.Fprintln(w, `$scope.onResult = function (rank1, rank2, samesuit, result) {`)
-	fmt.Fprintln(w, `result.Cards = rank1 + rank2 + (samesuit ? "s" : "");`)
-	fmt.Fprintln(w, `$scope.results.push(result);`)
-	fmt.Fprintln(w, `$scope.results.sort(function(a,b) {return b.WinCount - a.WinCount});`)
-	fmt.Fprintln(w, `$scope.resultsPending -= 1;`)
-	fmt.Fprintln(w, `}`)
-	fmt.Fprintln(w, `$scope.onError = function (rank1, rank2, samesuit, error, status) {`)
-	fmt.Fprintln(w, `$scope.errors += 1;`)
-	fmt.Fprintln(w, `console.log("Got error for " + rank1 + rank2 + samesuit + ": " + status + "\n" + JSON.stringify(error));`)
-	fmt.Fprintln(w, `}`)
-	fmt.Fprintln(w, `});`)
-	fmt.Fprintln(w, `</script>`)
-
-	fmt.Fprintln(w, `</body></html>`)
+func StartingCards(htmlBaseDir string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		path := path.Join(htmlBaseDir, "starting_cards.html")
+		body, err := ioutil.ReadFile(path)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Could not load %v: %v", path, err), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintln(w, string(body))
+	}
 }
 
 func getRank(req *http.Request, key string, w http.ResponseWriter) (poker.Rank, bool) {
