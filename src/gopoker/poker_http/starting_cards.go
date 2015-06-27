@@ -90,8 +90,9 @@ func StartingCards(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, `$scope.simulate = function() {`)
 	fmt.Fprintln(w, `$scope.started = true;`)
 	fmt.Fprintln(w, `var ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];`)
-	fmt.Fprintln(w, `for (i in ranks) {`)
-	fmt.Fprintln(w, `for (j in ranks) {`)
+	// JavaScript "for (i in ranks)" results in i being a string!?!?
+	fmt.Fprintln(w, `for (i = 0; i < ranks.length; i++) {`)
+	fmt.Fprintln(w, `for (j = 0; j < ranks.length; j++) {`)
 	fmt.Fprintln(w, `if (j > i) { break; } // Avoid duplicates`)
 	fmt.Fprintln(w, `$scope.simulateOne(ranks[i], ranks[j], false);`)
 	fmt.Fprintln(w, `if (i != j) { $scope.simulateOne(ranks[i], ranks[j], true); }`)
