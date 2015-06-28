@@ -22,6 +22,14 @@ func main() {
 	flag.StringVar(&htmlBaseDir, "htmlbasedir", path.Join(currentDir, "html"), "Base directory containing HTML")
 	flag.Parse()
 
+	dirInfo, err := os.Stat(htmlBaseDir)
+	if err != nil {
+		log.Fatalf("Could not stat HTML base dir '%v': %v", htmlBaseDir, err)
+	}
+	if !dirInfo.IsDir() {
+		log.Fatalf("htmlbasedir '%v' is not a directory", htmlBaseDir)
+	}
+
 	log.Println("Using HTML base dir", htmlBaseDir)
 	log.Printf("Listening on port %v...\n", port)
 
