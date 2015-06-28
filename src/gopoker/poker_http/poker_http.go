@@ -38,6 +38,13 @@ func Menu(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</ul></body></html>")
 }
 
+func summariseCards(cards []poker.Card) string {
+	if len(cards) == 0 {
+		return "empty"
+	}
+	return formatCards(cards)
+}
+
 func formatCards(cards []poker.Card) string {
 	cardStrings := make([]string, len(cards))
 	for i, c := range cards {
@@ -161,7 +168,7 @@ func simulationParams(req *http.Request) (yourCards, tableCards []poker.Card, ha
 	return yourCards, tableCards, handsToPlay, nil
 }
 
-func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator) {
+func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator, yourCards, tableCards []poker.Card) {
 	handNames := make([]string, len(simulator.OurClassCounts))
 	soleWinData := make([]float64, len(simulator.ClassWinCounts))
 	jointWinData := make([]float64, len(simulator.ClassWinCounts))
@@ -184,9 +191,10 @@ func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator) {
 		map[string]interface{}{"name": "Loser", "data": lossData},
 		map[string]interface{}{"name": "Overall", "type": "pie", "data": overallData, "size": 100, "center": []string{"75%", "25%"}, "showInLegend": false, "dataLabels": map[string]interface{}{"enabled": true, "format": "{point.name} {y:.1f}%"}},
 	}
+	title := fmt.Sprintf("Simulation outcome: hand %v; table %v; N=%d", summariseCards(yourCards), summariseCards(tableCards), simulator.HandCount)
 	graphDef := map[string]interface{}{
 		"chart":       map[string]string{"type": "column"},
-		"title":       map[string]string{"text": "Simulation outcomes"},
+		"title":       map[string]interface{}{"text": title, "useHTML": true},
 		"xAxis":       map[string]interface{}{"categories": handNames},
 		"yAxis":       map[string]interface{}{"title": map[string]string{"text": "Probability (%)"}},
 		"series":      series,
@@ -347,7 +355,7 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</td></tr></table>")
 
 	fmt.Fprintf(w, "<h2>Results</h2>")
-	printResultGraphs(w, simulator)
+	printResultGraphs(w, simulator, yourCards, tableCards)
 	printResultTable(w, simulator)
 
 	fmt.Fprintf(w, "</form></body></html>")
