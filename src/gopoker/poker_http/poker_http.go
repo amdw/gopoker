@@ -20,6 +20,7 @@ along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 package poker_http
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"gopoker/poker"
@@ -160,6 +161,39 @@ func simulationParams(req *http.Request) (yourCards, tableCards []poker.Card, ha
 	return yourCards, tableCards, handsToPlay, nil
 }
 
+func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator) {
+	handNames := make([]string, len(simulator.OurClassCounts))
+	soleWinData := make([]float64, len(simulator.ClassWinCounts))
+	jointWinData := make([]float64, len(simulator.ClassWinCounts))
+	lossData := make([]float64, len(simulator.ClassWinCounts))
+	for class := range simulator.ClassWinCounts {
+		handNames[class] = poker.HandClass(class).String()
+		soleWinData[class] = 100.0 * float64(simulator.ClassWinCounts[class]-simulator.ClassJointWinCounts[class]) / float64(simulator.HandCount)
+		jointWinData[class] = 100.0 * float64(simulator.ClassJointWinCounts[class]) / float64(simulator.HandCount)
+		lossData[class] = 100.0 * float64(simulator.OurClassCounts[class]-simulator.ClassWinCounts[class]) / float64(simulator.HandCount)
+	}
+	series := []map[string]interface{}{
+		map[string]interface{}{"name": "Sole winner", "data": soleWinData},
+		map[string]interface{}{"name": "Joint winner", "data": jointWinData},
+		map[string]interface{}{"name": "Loser", "data": lossData},
+	}
+	graphDef := map[string]interface{}{
+		"chart":       map[string]string{"type": "column"},
+		"title":       map[string]string{"text": "Simulation outcomes"},
+		"xAxis":       map[string]interface{}{"categories": handNames},
+		"yAxis":       map[string]interface{}{"title": map[string]string{"text": "Probability (%)"}},
+		"series":      series,
+		"plotOptions": map[string]interface{}{"series": map[string]string{"stacking": "normal"}},
+		"tooltip":     map[string]string{"pointFormat": "{series.name}: <b>{point.y:.1f}%</b>"},
+	}
+	fmt.Fprintln(w, `<div id="wingraph" style="width: 100%; height: 400px"></div>`)
+	fmt.Fprintln(w, `<script>`)
+	fmt.Fprintln(w, `$(function () { $('#wingraph').highcharts(`)
+	json.NewEncoder(w).Encode(graphDef)
+	fmt.Fprintln(w, `)});`)
+	fmt.Fprintln(w, `</script>`)
+}
+
 func formatPct(num, denom int) string {
 	result := ""
 	if denom != 0 {
@@ -268,6 +302,8 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "td.zero { color: lightgrey }\n")
 	fmt.Fprintf(w, ".summary { font-weight: bold }\n")
 	fmt.Fprintf(w, "</style>")
+	fmt.Fprintf(w, `<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>`)
+	fmt.Fprintf(w, `<script src="http://code.highcharts.com/highcharts.js"></script>`)
 	fmt.Fprintf(w, "</head><body><h1>Texas Hold'em Simulator</h1>")
 
 	players, err := getPlayers(req)
@@ -303,7 +339,8 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, `<tr><td class="formcell"><b>Simulations</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, simCountKey, simulator.HandCount)
 	fmt.Fprintf(w, "</td></tr></table>")
 
-	fmt.Fprintf(w, "<h3>Results</h3>")
+	fmt.Fprintf(w, "<h2>Results</h2>")
+	printResultGraphs(w, simulator)
 	printResultTable(w, simulator)
 
 	fmt.Fprintf(w, "</form></body></html>")
