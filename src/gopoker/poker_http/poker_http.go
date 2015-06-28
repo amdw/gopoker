@@ -172,10 +172,17 @@ func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator) {
 		jointWinData[class] = 100.0 * float64(simulator.ClassJointWinCounts[class]) / float64(simulator.HandCount)
 		lossData[class] = 100.0 * float64(simulator.OurClassCounts[class]-simulator.ClassWinCounts[class]) / float64(simulator.HandCount)
 	}
+	overallData := []interface{}{
+		map[string]interface{}{"name": "Sole winner", "y": 100.0 * float64(simulator.WinCount-simulator.JointWinCount) / float64(simulator.HandCount)},
+		map[string]interface{}{"name": "Joint winner", "y": 100.0 * float64(simulator.JointWinCount) / float64(simulator.HandCount)},
+		map[string]interface{}{"name": "Loser", "y": 100.0 * float64(simulator.HandCount-simulator.WinCount) / float64(simulator.HandCount)},
+	}
+	//"type": "column",
 	series := []map[string]interface{}{
 		map[string]interface{}{"name": "Sole winner", "data": soleWinData},
 		map[string]interface{}{"name": "Joint winner", "data": jointWinData},
 		map[string]interface{}{"name": "Loser", "data": lossData},
+		map[string]interface{}{"name": "Overall", "type": "pie", "data": overallData, "size": 100, "center": []string{"75%", "25%"}, "showInLegend": false, "dataLabels": map[string]interface{}{"enabled": true, "format": "{point.name} {y:.1f}%"}},
 	}
 	graphDef := map[string]interface{}{
 		"chart":       map[string]string{"type": "column"},
