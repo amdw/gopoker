@@ -22,7 +22,7 @@ package poker_http
 import (
 	"encoding/json"
 	"fmt"
-	"gopoker/poker"
+	"github.com/amdw/gopoker/poker"
 	"io/ioutil"
 	"log"
 	"net/http"

@@ -23,7 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gopoker/poker"
+	"github.com/amdw/gopoker/poker"
 	"html/template"
 	"net/http"
 	"strconv"
