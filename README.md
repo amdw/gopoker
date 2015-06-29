@@ -8,7 +8,7 @@ There is an HTTP front end, which so far provides the following features:
 * "Simulate", which allows you to specify a number of known cards (both on the table and in your hand) and simulates a large number of hands of Texas Hold'em to see how likely various possible outcomes are. This gives an estimate of the conditional probabilities of the various game outcomes, given the cards that you know. (Poker strategy cannot be reduced to an algorithm purely based on these probabilities - you have to take your opponents' playing styles and betting behaviour into account, which is what makes poker an interesting game - but it is still very helpful to have a good sense of them.)
 * "Starting cards", which compares the win probabilities from holding different starting pairs in Texas Hold'em. This information is useful when considering which hands to play and which to fold pre-flop. Simulations are done concurrently and inserted into the page in real-time using Angular.JS.
 
-# Installing and Running
+# Installing and running locally
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ There is an HTTP front end, which so far provides the following features:
   * ```export GOPATH=$HOME/go```
   * ```export PATH=$PATH:$GOPATH/bin```
 
-## Running locally
+## Running HTTP server
 
 * Download this code into your workspace using ```go get github.com/amdw/gopoker```
 * Build and install using ```go install github.com/amdw/gopoker```
@@ -29,6 +29,16 @@ There is an HTTP front end, which so far provides the following features:
 To run the tests, you can run:
 
     go test github.com/amdw/gopoker/...
+
+# Running on Heroku
+
+The Gopoker HTTP server will run on the [Heroku](https://heroku.com) cloud platform using the standard Heroku buildpack for Go.
+
+* Create a Heroku account and install the [Heroku toolbelt](https://devcenter.heroku.com/articles/heroku-command)
+* Clone this repository
+* Run ```heroku create -b https://github.com/heroku/heroku-buildpack-go``` to create the new Heroku application
+* Run ```git push heroku master``` to push the code to Heroku
+* Run ```heroku open``` to open the app in a web browser
 
 # Licensing
 

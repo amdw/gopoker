@@ -317,8 +317,8 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "td.zero { color: lightgrey }\n")
 	fmt.Fprintf(w, ".summary { font-weight: bold }\n")
 	fmt.Fprintf(w, "</style>")
-	fmt.Fprintf(w, `<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>`)
-	fmt.Fprintf(w, `<script src="http://code.highcharts.com/highcharts.js"></script>`)
+	fmt.Fprintf(w, `<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>`)
+	fmt.Fprintf(w, `<script src="//code.highcharts.com/highcharts.js"></script>`)
 	fmt.Fprintf(w, "</head><body><h1>Texas Hold'em Simulator</h1>")
 
 	players, err := getPlayers(req)
