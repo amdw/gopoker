@@ -126,8 +126,8 @@ func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
 // Play out a hand of holdem, and return the table cards, the player cards for each player, and a sorted list of player outcomes.
 // Equivalent hands are sorted by player number.
 func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, outcomes []PlayerOutcome) {
-	if players < 2 {
-		panic(fmt.Sprintf("At least two players required, found %v", players))
+	if players < 1 {
+		panic(fmt.Sprintf("At least one player required, found %v", players))
 	}
 
 	onTable = p.Cards[0:5]
@@ -180,5 +180,12 @@ func (p *Pack) SimulateOneHoldemHand(players int) (won, opponentWon bool, ourLev
 func NewPack() Pack {
 	var result Pack
 	result.initialise()
+	return result
+}
+
+// Example of a shuffled pack yielding certain cards for you and on the table
+func SamplePack(tableCards, yourCards []Card) Pack {
+	result := NewPack()
+	result.shuffleFixing(tableCards, yourCards)
 	return result
 }
