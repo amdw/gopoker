@@ -329,7 +329,7 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, `<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>`)
 	fmt.Fprintf(w, `<script src="//code.highcharts.com/highcharts.js"></script>`)
 	fmt.Fprintf(w, "</head><body>")
-	fmt.Fprintln(w, `<div class="container">`)
+	fmt.Fprintln(w, `<div class="container-fluid">`)
 	fmt.Fprintln(w, "<h1>Texas Hold'em Simulator</h1>")
 
 	players, err := getPlayers(req)
