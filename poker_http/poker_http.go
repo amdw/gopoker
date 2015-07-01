@@ -31,11 +31,13 @@ import (
 )
 
 func Menu(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "<html><head><title>Poker</title></head><body><h1>Poker</h1><ul>")
-	fmt.Fprintf(w, `<li><a href="/play">Play</a></li>`)
-	fmt.Fprintf(w, `<li><a href="/simulate">Simulate</a></li>`)
-	fmt.Fprintf(w, `<li><a href="/startingcards">Starting cards</a></li>`)
-	fmt.Fprintf(w, "</ul></body></html>")
+	fmt.Fprintln(w, "<html><head>")
+	fmt.Fprintln(w, `<meta name="viewport" content="width=device-width, initial-scale=1">`)
+	fmt.Fprintln(w, "<title>Poker</title></head><body><h1>Poker</h1><ul>")
+	fmt.Fprintln(w, `<li><a href="/play">Play</a></li>`)
+	fmt.Fprintln(w, `<li><a href="/simulate">Simulate</a></li>`)
+	fmt.Fprintln(w, `<li><a href="/startingcards">Starting cards</a></li>`)
+	fmt.Fprintln(w, "</ul></body></html>")
 }
 
 func summariseCards(cards []poker.Card) string {
@@ -72,7 +74,9 @@ func getPlayers(req *http.Request) (int, error) {
 
 func PlayHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	fmt.Fprintf(w, "<html><head><title>A game of Texas Hold'em</title></head><body><h1>A game of Texas Hold'em</h1>")
+	fmt.Fprintln(w, "<html><head><title>A game of Texas Hold'em</title>")
+	fmt.Fprintln(w, `<meta name="viewport" content="width=device-width, initial-scale=1">`)
+	fmt.Fprintln(w, "</head><body><h1>A game of Texas Hold'em</h1>")
 	players, err := getPlayers(req)
 	if err != nil {
 		// Use template to sanitise user input for security
@@ -308,8 +312,9 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 
 func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	fmt.Fprintf(w, "<html><head><title>Texas Hold'em simulator</title>")
-	fmt.Fprintf(w, "<style>")
+	fmt.Fprintln(w, "<html><head><title>Texas Hold'em simulator</title>")
+	fmt.Fprintln(w, `<meta name="viewport" content="width=device-width, initial-scale=1">`)
+	fmt.Fprintln(w, "<style>")
 	fmt.Fprintf(w, "td.formcell { vertical-align: top }\n")
 	fmt.Fprintf(w, "table.countTable { border-collapse: collapse; }\n")
 	fmt.Fprintf(w, "th.countTable, td.countTable { border: 1px solid black; padding: 3px; }\n")
