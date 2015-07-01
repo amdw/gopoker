@@ -205,7 +205,7 @@ func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator, yourCar
 		"plotOptions": map[string]interface{}{"series": map[string]string{"stacking": "normal"}},
 		"tooltip":     map[string]string{"pointFormat": "{series.name}: <b>{point.y:.1f}%</b>"},
 	}
-	fmt.Fprintln(w, `<div id="wingraph" style="width: 100%; height: 400px"></div>`)
+	fmt.Fprintln(w, `<div id="wingraph" style="height: 400px"></div>`)
 	fmt.Fprintln(w, `<script>`)
 	fmt.Fprintln(w, `$(function () { $('#wingraph').highcharts(`)
 	json.NewEncoder(w).Encode(graphDef)
@@ -312,37 +312,44 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 
 func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	fmt.Fprintln(w, "<html><head><title>Texas Hold'em simulator</title>")
+	fmt.Fprintln(w, "<!DOCTYPE html>")
+	fmt.Fprintln(w, `<html lang="en">`)
+	fmt.Fprintln(w, "<head><title>Texas Hold'em simulator</title>")
 	fmt.Fprintln(w, `<meta name="viewport" content="width=device-width, initial-scale=1">`)
+	fmt.Fprintln(w, `<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">`)
 	fmt.Fprintln(w, "<style>")
-	fmt.Fprintf(w, "td.formcell { vertical-align: top }\n")
-	fmt.Fprintf(w, "table.countTable { border-collapse: collapse; }\n")
-	fmt.Fprintf(w, "th.countTable, td.countTable { border: 1px solid black; padding: 3px; }\n")
-	fmt.Fprintf(w, "td.numcell { text-align: right }\n")
-	fmt.Fprintf(w, "td.zero { color: lightgrey }\n")
-	fmt.Fprintf(w, ".summary { font-weight: bold }\n")
-	fmt.Fprintf(w, "</style>")
+	fmt.Fprintln(w, "td.formcell { vertical-align: top }")
+	fmt.Fprintln(w, "table.countTable { border-collapse: collapse; }")
+	fmt.Fprintln(w, "th.countTable { text-align: center }")
+	fmt.Fprintln(w, "th.countTable, td.countTable { border: 1px solid black; padding: 3px; }")
+	fmt.Fprintln(w, "td.numcell { text-align: right }")
+	fmt.Fprintln(w, "td.zero { color: lightgrey }")
+	fmt.Fprintln(w, ".summary { font-weight: bold }")
+	fmt.Fprintln(w, "</style>")
 	fmt.Fprintf(w, `<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>`)
 	fmt.Fprintf(w, `<script src="//code.highcharts.com/highcharts.js"></script>`)
-	fmt.Fprintf(w, "</head><body><h1>Texas Hold'em Simulator</h1>")
+	fmt.Fprintf(w, "</head><body>")
+	fmt.Fprintln(w, `<div class="container">`)
+	fmt.Fprintln(w, "<h1>Texas Hold'em Simulator</h1>")
 
 	players, err := getPlayers(req)
 	if err != nil {
 		// Use a template for security as error messages will often contain raw user input
-		t := template.Must(template.New("error").Parse("<p>Could not get player count: {{.}}</p></body></html>"))
+		t := template.Must(template.New("error").Parse("<p>Could not get player count: {{.}}</p></div></body></html>"))
 		t.Execute(w, err.Error())
 		return
 	}
 
 	yourCards, tableCards, handsToPlay, err := simulationParams(req)
 	if err != nil {
-		t := template.Must(template.New("error").Parse("<p>Could not get simulation parameters: {{.}}</p></body></html>"))
+		t := template.Must(template.New("error").Parse("<p>Could not get simulation parameters: {{.}}</p></div></body></html>"))
 		t.Execute(w, err.Error())
 		return
 	}
 
 	simulator := poker.Simulator{}
 	simulator.SimulateHoldem(yourCards, tableCards, players, handsToPlay)
+	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
 	fmt.Fprintf(w, `<form method="get">`)
 	fmt.Fprintf(w, `<p><input type="submit" value="Rerun"/> <a href="/simulate">Reset</a></p>`)
 	fmt.Fprintf(w, "<table>")
@@ -358,10 +365,15 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, `<tr><td class="formcell"><b>Table cards</b></td><td>%v <input type="text" name="%v" value="%v"/></td></tr>`, formatCards(tableCards), tableCardsKey, cardText(tableCards))
 	fmt.Fprintf(w, `<tr><td class="formcell"><b>Simulations</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, simCountKey, simulator.HandCount)
 	fmt.Fprintf(w, "</td></tr></table>")
+	fmt.Fprintf(w, "</form></div></div>")
 
+	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
 	fmt.Fprintf(w, "<h2>Results</h2>")
 	printResultGraphs(w, simulator, yourCards, tableCards)
+	fmt.Fprintln(w, `</div></div>`)
+	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
 	printResultTable(w, simulator)
+	fmt.Fprintln(w, `</div></div>`)
 
-	fmt.Fprintf(w, "</form></body></html>")
+	fmt.Fprintf(w, "</div></body></html>")
 }
