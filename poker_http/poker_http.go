@@ -329,7 +329,6 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, "<!DOCTYPE html>")
 	fmt.Fprintln(w, `<html lang="en">`)
 	fmt.Fprintln(w, "<head><title>Texas Hold'em simulator</title>")
-	fmt.Fprintln(w, `<meta name="viewport" content="width=device-width, initial-scale=1">`)
 	fmt.Fprintln(w, `<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">`)
 	fmt.Fprintln(w, "<style>")
 	fmt.Fprintln(w, "td.formcell { vertical-align: top }")
