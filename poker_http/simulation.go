@@ -105,45 +105,63 @@ func simulationParams(req *http.Request) (tableCards, yourCards []poker.Card, ha
 	return tableCards, yourCards, handsToPlay, nil
 }
 
-func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator, tableCards, yourCards []poker.Card) {
-	handNames := make([]string, len(simulator.OurClassCounts))
-	soleWinData := make([]float64, len(simulator.ClassWinCounts))
-	jointWinData := make([]float64, len(simulator.ClassWinCounts))
-	lossData := make([]float64, len(simulator.ClassWinCounts))
-	for class := range simulator.ClassWinCounts {
+type graphData struct {
+	wins, jointWins, total                      int
+	winsByClass, jointWinsByClass, totalByClass []int
+}
+
+func printResultGraph(w http.ResponseWriter, data graphData, title, id string) {
+	handNames := make([]string, len(data.winsByClass))
+	soleWinData := make([]float64, len(data.winsByClass))
+	jointWinData := make([]float64, len(data.winsByClass))
+	lossData := make([]float64, len(data.winsByClass))
+	for class := range data.winsByClass {
 		handNames[class] = poker.HandClass(class).String()
-		soleWinData[class] = 100.0 * float64(simulator.ClassWinCounts[class]-simulator.ClassJointWinCounts[class]) / float64(simulator.HandCount)
-		jointWinData[class] = 100.0 * float64(simulator.ClassJointWinCounts[class]) / float64(simulator.HandCount)
-		lossData[class] = 100.0 * float64(simulator.OurClassCounts[class]-simulator.ClassWinCounts[class]) / float64(simulator.HandCount)
+		soleWinData[class] = 100.0 * float64(data.winsByClass[class]-data.jointWinsByClass[class]) / float64(data.total)
+		jointWinData[class] = 100.0 * float64(data.jointWinsByClass[class]) / float64(data.total)
+		lossData[class] = 100.0 * float64(data.totalByClass[class]-data.winsByClass[class]) / float64(data.total)
 	}
 	overallData := []interface{}{
-		map[string]interface{}{"name": "Sole winner", "y": 100.0 * float64(simulator.WinCount-simulator.JointWinCount) / float64(simulator.HandCount)},
-		map[string]interface{}{"name": "Joint winner", "y": 100.0 * float64(simulator.JointWinCount) / float64(simulator.HandCount)},
-		map[string]interface{}{"name": "Loser", "y": 100.0 * float64(simulator.HandCount-simulator.WinCount) / float64(simulator.HandCount)},
+		map[string]interface{}{"name": "Sole winner", "y": 100.0 * float64(data.wins-data.jointWins) / float64(data.total)},
+		map[string]interface{}{"name": "Joint winner", "y": 100.0 * float64(data.jointWins) / float64(data.total)},
+		map[string]interface{}{"name": "Loser", "y": 100.0 * float64(data.total-data.wins) / float64(data.total)},
 	}
 	//"type": "column",
 	series := []map[string]interface{}{
 		map[string]interface{}{"name": "Sole winner", "data": soleWinData},
 		map[string]interface{}{"name": "Joint winner", "data": jointWinData},
 		map[string]interface{}{"name": "Loser", "data": lossData},
-		map[string]interface{}{"name": "Overall", "type": "pie", "data": overallData, "size": 100, "center": []string{"75%", "25%"}, "showInLegend": false, "dataLabels": map[string]interface{}{"enabled": true, "format": "{point.name} {y:.1f}%"}},
+		map[string]interface{}{"name": "Overall", "type": "pie", "data": overallData, "size": 100, "center": []string{"60%", "25%"}, "showInLegend": false, "dataLabels": map[string]interface{}{"enabled": true, "format": "{point.name} {y:.1f}%"}},
 	}
-	title := fmt.Sprintf("Simulation outcome: hand %v; table %v; N=%d", summariseCards(yourCards), summariseCards(tableCards), simulator.HandCount)
 	graphDef := map[string]interface{}{
 		"chart":       map[string]string{"type": "column"},
 		"title":       map[string]interface{}{"text": title, "useHTML": true},
 		"xAxis":       map[string]interface{}{"categories": handNames},
-		"yAxis":       map[string]interface{}{"title": map[string]string{"text": "Probability (%)"}, "ceiling": 100},
+		"yAxis":       map[string]interface{}{"title": map[string]string{"text": "Probability (%)"}, "min": 0, "max": 100},
 		"series":      series,
 		"plotOptions": map[string]interface{}{"series": map[string]string{"stacking": "normal"}},
 		"tooltip":     map[string]string{"pointFormat": "{series.name}: <b>{point.y:.1f}%</b>"},
 	}
-	fmt.Fprintln(w, `<div id="wingraph" style="height: 400px"></div>`)
+	fmt.Fprintf(w, `<div id="%s" style="height: 400px"></div>`, id)
 	fmt.Fprintln(w, `<script>`)
-	fmt.Fprintln(w, `$(function () { $('#wingraph').highcharts(`)
+	fmt.Fprintf(w, `$(function () { $('#%s').highcharts(`, id)
 	json.NewEncoder(w).Encode(graphDef)
 	fmt.Fprintln(w, `)});`)
 	fmt.Fprintln(w, `</script>`)
+}
+
+func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator, tableCards, yourCards []poker.Card) {
+	fmt.Fprintln(w, `<div class="row">`)
+
+	fmt.Fprintln(w, `<div class="col-md-6">`)
+	printResultGraph(w, graphData{simulator.WinCount, simulator.JointWinCount, simulator.HandCount, simulator.ClassWinCounts, simulator.ClassJointWinCounts, simulator.OurClassCounts}, "Your outcomes", "wingraph")
+	fmt.Fprintln(w, `</div>`)
+
+	fmt.Fprintln(w, `<div class="col-md-6">`)
+	printResultGraph(w, graphData{simulator.BestOpponentWinCount, simulator.JointWinCount, simulator.HandCount, simulator.ClassBestOppWinCounts, simulator.ClassJointWinCounts, simulator.BestOpponentClassCounts}, "Best opponent outcomes", "bestoppwingraph")
+	fmt.Fprintln(w, `</div>`)
+
+	fmt.Fprintln(w, `</div>`)
 }
 
 func formatPct(num, denom int) string {
@@ -322,10 +340,8 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</td></tr></table>")
 	fmt.Fprintf(w, "</form></div></div>")
 
-	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
 	fmt.Fprintf(w, "<h2>Results</h2>")
 	printResultGraphs(w, simulator, tableCards, yourCards)
-	fmt.Fprintln(w, `</div></div>`)
 	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
 	printResultTable(w, simulator)
 	fmt.Fprintln(w, `</div></div>`)
