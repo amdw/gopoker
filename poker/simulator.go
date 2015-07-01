@@ -47,7 +47,7 @@ type Simulator struct {
 	ClassBestOppHands []HandLevel
 }
 
-func (s *Simulator) SimulateHoldem(yourCards, tableCards []Card, players, handsToPlay int) {
+func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsToPlay int) {
 	s.Players = players
 	s.HandCount = handsToPlay
 	s.WinCount = 0
@@ -144,6 +144,6 @@ func (pair StartingPair) SampleCards() (Card, Card) {
 func (pair StartingPair) RunSimulation(players, handsToPlay int) Simulator {
 	card1, card2 := pair.SampleCards()
 	result := Simulator{}
-	result.SimulateHoldem([]Card{card1, card2}, []Card{}, players, handsToPlay)
+	result.SimulateHoldem([]Card{}, []Card{card1, card2}, players, handsToPlay)
 	return result
 }

@@ -108,7 +108,7 @@ const yourCardsKey = "yours"
 const tableCardsKey = "table"
 const simCountKey = "simcount"
 
-func duplicateCheck(yourCards, tableCards []poker.Card) (ok bool, dupeCard poker.Card) {
+func duplicateCheck(tableCards, yourCards []poker.Card) (ok bool, dupeCard poker.Card) {
 	allCards := make([]poker.Card, len(yourCards)+len(tableCards))
 	copy(allCards, yourCards)
 	copy(allCards[len(yourCards):], tableCards)
@@ -122,7 +122,7 @@ func duplicateCheck(yourCards, tableCards []poker.Card) (ok bool, dupeCard poker
 	return true, poker.Card{}
 }
 
-func simulationParams(req *http.Request) (yourCards, tableCards []poker.Card, handsToPlay int, err error) {
+func simulationParams(req *http.Request) (tableCards, yourCards []poker.Card, handsToPlay int, err error) {
 	yourCards = []poker.Card{}
 	tableCards = []poker.Card{}
 	handsToPlay = 10000
@@ -144,35 +144,35 @@ func simulationParams(req *http.Request) (yourCards, tableCards []poker.Card, ha
 	}
 	yourCards, err = extractCards(yourCardsKey)
 	if err != nil {
-		return yourCards, tableCards, handsToPlay, err
+		return tableCards, yourCards, handsToPlay, err
 	}
 	if len(yourCards) > 2 {
-		return yourCards, tableCards, handsToPlay, errors.New(fmt.Sprintf("Maximum of 2 player cards allowed, found %v", len(yourCards)))
+		return tableCards, yourCards, handsToPlay, errors.New(fmt.Sprintf("Maximum of 2 player cards allowed, found %v", len(yourCards)))
 	}
 	tableCards, err = extractCards(tableCardsKey)
 	if err != nil {
-		return yourCards, tableCards, handsToPlay, err
+		return tableCards, yourCards, handsToPlay, err
 	}
 	if len(tableCards) > 5 {
-		return yourCards, tableCards, handsToPlay, errors.New(fmt.Sprintf("Maximum of 5 table cards allowed, found %v", len(tableCards)))
+		return tableCards, yourCards, handsToPlay, errors.New(fmt.Sprintf("Maximum of 5 table cards allowed, found %v", len(tableCards)))
 	}
 	// Check for duplicate cards
-	if ok, dupeCard := duplicateCheck(yourCards, tableCards); !ok {
-		return yourCards, tableCards, handsToPlay, errors.New(fmt.Sprintf("Found duplicate card %v in specification", dupeCard))
+	if ok, dupeCard := duplicateCheck(tableCards, yourCards); !ok {
+		return tableCards, yourCards, handsToPlay, errors.New(fmt.Sprintf("Found duplicate card %v in specification", dupeCard))
 	}
 
 	if handsToPlayStrs, ok := req.Form[simCountKey]; ok && len(handsToPlayStrs) > 0 {
 		handsToPlayParsed, err := strconv.ParseInt(handsToPlayStrs[0], 10, 32)
 		if err != nil {
-			return yourCards, tableCards, handsToPlay, errors.New(fmt.Sprintf("Could not parse simcount: %v", err.Error()))
+			return tableCards, yourCards, handsToPlay, errors.New(fmt.Sprintf("Could not parse simcount: %v", err.Error()))
 		}
 		handsToPlay = int(handsToPlayParsed)
 	}
 
-	return yourCards, tableCards, handsToPlay, nil
+	return tableCards, yourCards, handsToPlay, nil
 }
 
-func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator, yourCards, tableCards []poker.Card) {
+func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator, tableCards, yourCards []poker.Card) {
 	handNames := make([]string, len(simulator.OurClassCounts))
 	soleWinData := make([]float64, len(simulator.ClassWinCounts))
 	jointWinData := make([]float64, len(simulator.ClassWinCounts))
@@ -354,7 +354,7 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	yourCards, tableCards, handsToPlay, err := simulationParams(req)
+	tableCards, yourCards, handsToPlay, err := simulationParams(req)
 	if err != nil {
 		t := template.Must(template.New("error").Parse("<p>Could not get simulation parameters: {{.}}</p></div></body></html>"))
 		t.Execute(w, err.Error())
@@ -362,7 +362,7 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	}
 
 	simulator := poker.Simulator{}
-	simulator.SimulateHoldem(yourCards, tableCards, players, handsToPlay)
+	simulator.SimulateHoldem(tableCards, yourCards, players, handsToPlay)
 	simTableCards, simYourCards := sampleCards(tableCards, yourCards)
 	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
 	fmt.Fprintf(w, `<form method="get">`)
@@ -392,7 +392,7 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 
 	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
 	fmt.Fprintf(w, "<h2>Results</h2>")
-	printResultGraphs(w, simulator, yourCards, tableCards)
+	printResultGraphs(w, simulator, tableCards, yourCards)
 	fmt.Fprintln(w, `</div></div>`)
 	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
 	printResultTable(w, simulator)
