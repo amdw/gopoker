@@ -133,7 +133,7 @@ func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator, tableCa
 		"chart":       map[string]string{"type": "column"},
 		"title":       map[string]interface{}{"text": title, "useHTML": true},
 		"xAxis":       map[string]interface{}{"categories": handNames},
-		"yAxis":       map[string]interface{}{"title": map[string]string{"text": "Probability (%)"}, "max": 100},
+		"yAxis":       map[string]interface{}{"title": map[string]string{"text": "Probability (%)"}, "ceiling": 100},
 		"series":      series,
 		"plotOptions": map[string]interface{}{"series": map[string]string{"stacking": "normal"}},
 		"tooltip":     map[string]string{"pointFormat": "{series.name}: <b>{point.y:.1f}%</b>"},
