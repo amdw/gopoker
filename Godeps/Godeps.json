@@ -1,5 +1,5 @@
 {
 	"ImportPath": "github.com/amdw/gopoker",
-	"GoVersion": "go1.5.3",
+	"GoVersion": "go1.6.3",
 	"Deps": []
 }
