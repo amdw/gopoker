@@ -23,9 +23,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/amdw/gopoker/poker"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"strconv"
 )
@@ -38,12 +39,16 @@ const handsToPlayKey = "handstoplay"
 func StartingCards(htmlBaseDir string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		path := path.Join(htmlBaseDir, "starting_cards.html")
-		body, err := ioutil.ReadFile(path)
+		file, err := os.Open(path)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Could not load %v: %v", path, err), http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintln(w, string(body))
+		_, err = io.Copy(w, file)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Could not write %v: %v", path, err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
