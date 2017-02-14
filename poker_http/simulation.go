@@ -139,7 +139,6 @@ func makeYourSeries(simulator poker.Simulator) ([]string, []map[string]interface
 		map[string]interface{}{"name": "Joint winner", "y": 100.0 * float64(simulator.JointWinCount) / float64(simulator.HandCount)},
 		map[string]interface{}{"name": "Loser", "y": 100.0 * float64(simulator.HandCount-simulator.WinCount) / float64(simulator.HandCount)},
 	}
-	//"type": "column",
 	series := []map[string]interface{}{
 		map[string]interface{}{"name": "Sole winner", "data": soleWinData},
 		map[string]interface{}{"name": "Joint winner", "data": jointWinData},
