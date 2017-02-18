@@ -200,14 +200,14 @@ type playerStats struct {
 
 func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	cssClass := func(isNum, isZero bool) string {
-		result := "countTable"
+		classes := []string{}
 		if isNum {
-			result += " numcell"
+			classes = append(classes, "numcell")
 		}
 		if isZero {
-			result += " zero"
+			classes = append(classes, "zero")
 		}
-		return result
+		return strings.Join(classes, " ")
 	}
 	printStringCell := func(content string) {
 		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass(false, false), content)
@@ -226,7 +226,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		if colspan > 1 {
 			colspanStr = fmt.Sprintf(` colspan="%v"`, colspan)
 		}
-		fmt.Fprintf(w, `<th class="countTable"%v>%v</th>`, colspanStr, content)
+		fmt.Fprintf(w, `<th%v>%v</th>`, colspanStr, content)
 		fmt.Fprintln(w)
 	}
 	printRow := func(handClass string, yourStats, bestOppStats, randOppStats playerStats, isSummary bool) {
@@ -255,7 +255,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		printPctCell(randOppStats.WinCount, simulator.HandCount)
 		fmt.Fprintln(w, "</tr>")
 	}
-	fmt.Fprintln(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th>`)
+	fmt.Fprintln(w, `<div class="table-responsive"><table class="table table-bordered"><tr><th rowspan="2">Hand</th>`)
 	printHeadCell("For you", 7)
 	printHeadCell("For best opponent", 5)
 	printHeadCell("For random opponent", 4)
@@ -282,7 +282,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		}
 		printRow(poker.HandClass(class).String(), playerStats{simulator.OurClassCounts[class], simulator.ClassWinCounts[class], simulator.ClassJointWinCounts[class], bestHand}, playerStats{simulator.BestOpponentClassCounts[class], simulator.ClassBestOppWinCounts[class], -1, bestOppHand}, playerStats{simulator.RandomOpponentClassCounts[class], simulator.ClassRandOppWinCounts[class], -1, ""}, false)
 	}
-	fmt.Fprintf(w, "</table>")
+	fmt.Fprintf(w, "</table></div>")
 }
 
 func sampleCards(inputTableCards, inputYourCards []poker.Card) ([]string, []string) {
@@ -310,9 +310,7 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, "<title>Texas Hold'em simulator</title>")
 	fmt.Fprintln(w, `<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">`)
 	fmt.Fprintln(w, "<style>")
-	fmt.Fprintln(w, "table.countTable { border-collapse: collapse; }")
-	fmt.Fprintln(w, "th.countTable { text-align: center }")
-	fmt.Fprintln(w, "th.countTable, td.countTable { border: 1px solid black; padding: 3px; }")
+	fmt.Fprintln(w, "th { text-align: center }")
 	fmt.Fprintln(w, "td.numcell { text-align: right }")
 	fmt.Fprintln(w, "td.zero { color: lightgrey }")
 	fmt.Fprintln(w, ".summary { font-weight: bold }")
