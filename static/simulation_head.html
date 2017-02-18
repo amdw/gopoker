@@ -40,11 +40,19 @@ td.zero { color: lightgrey }
 
 <div class="form-group">
 <label>Your cards</i></label> <div class="form-control" ng-bind-html="displayYourCards()"></div>
+<button type="button" class="btn btn-warning" ng-click="deleteOneYourCard()" ng-disabled="yourCardsEmpty()">Delete</button>
+<button ng-repeat="suit in legalSuits" type="button" class="btn btn-default" ng-click="setYourPendingSuit(suit)" ng-class="yourSuitButtonClasses(suit)" ng-disabled="yourCardsFull()"><span ng-bind-html="displaySuit(suit)"></span></button>
+<button ng-repeat="rank in legalRanks" type="button" class="btn btn-default" ng-click="setYourPendingRank(rank)" ng-class="yourRankButtonClasses(rank)" ng-disabled="yourCardsFull()">{{rank}}</button>
+<br/>
 <button type="button" class="btn btn-default" ng-click="yourCardsRandom()">Random</button>
 </div>
 
 <div class="form-group">
 <label>Table cards</label> <div class="form-control" ng-bind-html="displayTableCards()"></div>
+<button type="button" class="btn btn-warning" ng-click="deleteOneTableCard()" ng-disabled="tableCardsEmpty()">Delete</button>
+<button ng-repeat="suit in legalSuits" type="button" class="btn btn-default" ng-click="setTablePendingSuit(suit)" ng-class="tableSuitButtonClasses(suit)" ng-disabled="tableCardsFull()"><span ng-bind-html="displaySuit(suit)"></span></button>
+<button ng-repeat="rank in legalRanks" type="button" class="btn btn-default" ng-click="setTablePendingRank(rank)" ng-class="tableRankButtonClasses(rank)" ng-disabled="tableCardsFull()">{{rank}}</button>
+<br/>
 <button type="button" class="btn btn-default" ng-click="flopRandom()">Random flop</button>
 <button type="button" class="btn btn-default" ng-click="turnRandom()">Random turn</button>
 <button type="button" class="btn btn-default" ng-click="riverRandom()">Random river</button>

@@ -6,8 +6,13 @@ app.controller('simulatorController', function($scope, $window, $sce) {
     $scope.tableCards = initTableCards;
     $scope.simulationCount = initSimCount;
 
-    var legalRanks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-    var legalSuits = ["C", "D", "H", "S"];
+    $scope.legalRanks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+    $scope.legalSuits = ["C", "D", "H", "S"];
+
+    $scope.yourPendingSuit = "";
+    $scope.yourPendingRank = "";
+    $scope.tablePendingSuit = "";
+    $scope.tablePendingRank = "";
 
     $scope.fewerPlayers = function() {
         $scope.playerCount = Math.max(2, $scope.playerCount - 1);
@@ -16,29 +21,25 @@ app.controller('simulatorController', function($scope, $window, $sce) {
         $scope.playerCount += 1;
     };
 
+    $scope.displaySuit = function(suit) {
+        switch (suit) {
+            case "C":
+                return $sce.trustAsHtml("&#9827;");
+            case "D":
+                return $sce.trustAsHtml('<span style="color:red">&#9830;</span>');
+            case "H":
+                return $sce.trustAsHtml('<span style="color:red">&#9829;</span>');
+            case "S":
+                return $sce.trustAsHtml("&#9824;");
+        }
+        return "?";
+    };
     var displayCard = function(card) {
         var rank = card.toUpperCase().slice(0, -1);
         var suit = card.toUpperCase().slice(-1);
-        var displaySuit;
-        switch (suit) {
-            case "C":
-                displaySuit = "&#9827;";
-                break;
-            case "D":
-                displaySuit = '<span style="color:red">&#9830;</span>';
-                break;
-            case "H":
-                displaySuit = '<span style="color:red">&#9829;</span>';
-                break;
-            case "S":
-                displaySuit = "&#9824;";
-                break;
-            default:
-                displaySuit = "?";
-        }
         // This is trusted HTML so don't allow arbitrary stuff through
-        var displayRank = legalRanks.indexOf(rank) >= 0 ? rank : "?";
-        return displayRank + displaySuit;
+        var displayRank = $scope.legalRanks.indexOf(rank) >= 0 ? rank : "?";
+        return displayRank + $scope.displaySuit(suit);
     };
     var displayCards = function(cards) {
         return cards.map(displayCard).join(", ");
@@ -62,9 +63,9 @@ app.controller('simulatorController', function($scope, $window, $sce) {
 
     var remainingPack = function() {
         var result = [];
-        for (i = 0; i < legalSuits.length; i++) {
-            for (j = 0; j < legalRanks.length; j++) {
-                var card = legalRanks[j] + legalSuits[i];
+        for (i = 0; i < $scope.legalSuits.length; i++) {
+            for (j = 0; j < $scope.legalRanks.length; j++) {
+                var card = $scope.legalRanks[j] + $scope.legalSuits[i];
                 if ($scope.yourCards.indexOf(card) < 0 && $scope.tableCards.indexOf(card) < 0) {
                     result.push(card);
                 }
@@ -98,6 +99,77 @@ app.controller('simulatorController', function($scope, $window, $sce) {
     };
     $scope.riverRandom = function() {
         tableCardsRandom(5);
+    };
+
+    $scope.deleteOneYourCard = function() {
+        $scope.yourCards.splice(-1, 1);
+    };
+    $scope.deleteOneTableCard = function() {
+        $scope.tableCards.splice(-1, 1);
+    };
+
+    var addYourPendingCard = function() {
+        if ($scope.legalSuits.indexOf($scope.yourPendingSuit) >= 0 && $scope.legalRanks.indexOf($scope.yourPendingRank) >= 0) {
+            var card = $scope.yourPendingRank + $scope.yourPendingSuit;
+            if ($scope.yourCards.indexOf(card) < 0 && $scope.tableCards.indexOf(card) < 0) {
+                $scope.yourCards.push(card);
+            }
+            $scope.yourPendingRank = "";
+            $scope.yourPendingSuit = "";
+        }
+    };
+    var addTablePendingCard = function() {
+        if ($scope.legalSuits.indexOf($scope.tablePendingSuit) >= 0 && $scope.legalRanks.indexOf($scope.tablePendingRank) >= 0) {
+            var card = $scope.tablePendingRank + $scope.tablePendingSuit;
+            if ($scope.tableCards.indexOf(card) < 0 && $scope.yourCards.indexOf(card) < 0) {
+                $scope.tableCards.push(card);
+            }
+            $scope.tablePendingRank = "";
+            $scope.tablePendingSuit = "";
+        }
+    }
+
+    $scope.setYourPendingSuit = function(suit) {
+        $scope.yourPendingSuit = suit;
+        addYourPendingCard();
+    };
+    $scope.setYourPendingRank = function(rank) {
+        $scope.yourPendingRank = rank;
+        addYourPendingCard();
+    };
+    $scope.setTablePendingSuit = function(suit) {
+        $scope.tablePendingSuit = suit;
+        addTablePendingCard();
+    };
+    $scope.setTablePendingRank = function(rank) {
+        $scope.tablePendingRank = rank;
+        addTablePendingCard();
+    };
+
+    $scope.yourCardsEmpty = function() {
+        return $scope.yourCards.length < 1;
+    };
+    $scope.yourCardsFull = function() {
+        return $scope.yourCards.length >= 2;
+    };
+    $scope.tableCardsEmpty = function() {
+        return $scope.tableCards.length < 1;
+    };
+    $scope.tableCardsFull = function() {
+        return $scope.tableCards.length >= 5;
+    };
+
+    $scope.yourSuitButtonClasses = function(suit) {
+        return {'active': suit == $scope.yourPendingSuit && !$scope.yourCardsFull()};
+    };
+    $scope.yourRankButtonClasses = function(rank) {
+        return {'active': rank == $scope.yourPendingRank && !$scope.yourCardsFull()};
+    };
+    $scope.tableSuitButtonClasses = function(suit) {
+        return {'active': suit == $scope.tablePendingSuit && !$scope.tableCardsFull()};
+    };
+    $scope.tableRankButtonClasses = function(rank) {
+        return {'active': rank == $scope.tablePendingRank && !$scope.tableCardsFull()};
     };
 
     $scope.rerun = function() {
