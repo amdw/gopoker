@@ -211,12 +211,15 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	}
 	printStringCell := func(content string) {
 		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass(false, false), content)
+		fmt.Fprintln(w)
 	}
 	printNumCell := func(content int) {
 		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass(true, content == 0), content)
+		fmt.Fprintln(w)
 	}
 	printPctCell := func(num, denom int) {
 		fmt.Fprintf(w, `<td class="%v">%v</td>`, cssClass(true, num == 0), formatPct(num, denom))
+		fmt.Fprintln(w)
 	}
 	printHeadCell := func(content string, colspan int) {
 		colspanStr := ""
@@ -224,6 +227,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 			colspanStr = fmt.Sprintf(` colspan="%v"`, colspan)
 		}
 		fmt.Fprintf(w, `<th class="countTable"%v>%v</th>`, colspanStr, content)
+		fmt.Fprintln(w)
 	}
 	printRow := func(handClass string, yourStats, bestOppStats, randOppStats playerStats, isSummary bool) {
 		cssClass := ""
@@ -231,6 +235,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 			cssClass = ` class="summary"`
 		}
 		fmt.Fprintf(w, `<tr%v>`, cssClass)
+		fmt.Fprintln(w)
 		printStringCell(handClass)
 		printNumCell(yourStats.ClassFreq)
 		printPctCell(yourStats.ClassFreq, simulator.HandCount)
@@ -248,13 +253,13 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		printPctCell(randOppStats.ClassFreq, simulator.HandCount)
 		printNumCell(randOppStats.WinCount)
 		printPctCell(randOppStats.WinCount, simulator.HandCount)
-		fmt.Fprintf(w, "</tr>")
+		fmt.Fprintln(w, "</tr>")
 	}
-	fmt.Fprintf(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th>`)
+	fmt.Fprintln(w, `<table class="countTable"><tr><th class="countTable" rowspan="2">Hand</th>`)
 	printHeadCell("For you", 7)
 	printHeadCell("For best opponent", 5)
-	printHeadCell("For random opponent", 5)
-	fmt.Fprintf(w, `</tr><tr>`)
+	printHeadCell("For random opponent", 4)
+	fmt.Fprintln(w, `</tr><tr>`)
 	printHeadCell("Freq", 2)
 	printHeadCell("Wins", 2)
 	printHeadCell("Joint wins", 2)
@@ -264,7 +269,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	printHeadCell("Best hand", 1)
 	printHeadCell("Freq", 2)
 	printHeadCell("Wins", 2)
-	fmt.Fprintf(w, `</tr>`)
+	fmt.Fprintln(w, `</tr>`)
 	printRow("All", playerStats{simulator.HandCount, simulator.WinCount, simulator.JointWinCount, simulator.BestHand.PrettyPrint()}, playerStats{simulator.HandCount, simulator.BestOpponentWinCount, -1, simulator.BestOppHand.PrettyPrint()}, playerStats{simulator.HandCount, simulator.RandomOpponentWinCount, -1, ""}, true)
 	for class := range simulator.OurClassCounts {
 		bestHand := ""
@@ -298,10 +303,13 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	fmt.Fprintln(w, "<!DOCTYPE html>")
 	fmt.Fprintln(w, `<html lang="en">`)
-	fmt.Fprintln(w, "<head><title>Texas Hold'em simulator</title>")
-	fmt.Fprintln(w, `<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">`)
+	fmt.Fprintln(w, "<head>")
+	fmt.Fprintln(w, `<meta charset="utf-8">`)
+	fmt.Fprintln(w, `<meta http-equiv="X-UA-Compatible" content="IE=edge">`)
+	fmt.Fprintln(w, `<meta name="viewport" content="width=device-width, initial-scale=1">`)
+	fmt.Fprintln(w, "<title>Texas Hold'em simulator</title>")
+	fmt.Fprintln(w, `<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">`)
 	fmt.Fprintln(w, "<style>")
-	fmt.Fprintln(w, "td.formcell { vertical-align: top }")
 	fmt.Fprintln(w, "table.countTable { border-collapse: collapse; }")
 	fmt.Fprintln(w, "th.countTable { text-align: center }")
 	fmt.Fprintln(w, "th.countTable, td.countTable { border: 1px solid black; padding: 3px; }")
@@ -309,7 +317,7 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, "td.zero { color: lightgrey }")
 	fmt.Fprintln(w, ".summary { font-weight: bold }")
 	fmt.Fprintln(w, "</style>")
-	fmt.Fprintf(w, `<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>`)
+	fmt.Fprintf(w, `<script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>`)
 	fmt.Fprintf(w, `<script src="//code.highcharts.com/highcharts.js"></script>`)
 	fmt.Fprintf(w, "</head><body>")
 	fmt.Fprintln(w, `<div class="container-fluid">`)
@@ -334,9 +342,13 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	simulator.SimulateHoldem(tableCards, yourCards, players, handsToPlay)
 	simTableCards, simYourCards := sampleCards(tableCards, yourCards)
 	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
-	fmt.Fprintf(w, `<form method="get">`)
-	fmt.Fprintf(w, `<p><input type="submit" value="Rerun"/> <a href="/simulate">Reset</a></p>`)
-	fmt.Fprintf(w, "<table>")
+	fmt.Fprintln(w, `<form method="get">`)
+
+	fmt.Fprintln(w, `<div class="form-group">`)
+	fmt.Fprintln(w, `<input type="submit" class="btn btn-primary" value="Rerun"/>`)
+	fmt.Fprintln(w, `<a href="/simulate" class="btn btn-warning">Reset</a>`)
+	fmt.Fprintln(w, `</div>`)
+
 	cardText := func(cards []poker.Card) string {
 		text := make([]string, len(cards))
 		for i, c := range cards {
@@ -344,20 +356,33 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 		}
 		return strings.Join(text, ",")
 	}
-	fmt.Fprintf(w, `<tr><td class="formcell"><b>Players</b></td><td><input id="playercount" type="text" name="%v" value="%v"/></td>`, playersKey, players)
-	fmt.Fprintf(w, `<td><button type="button" onclick="$('#playercount').val(Math.max(2, $('#playercount').val()-1))">Fewer</button></td>`)
-	fmt.Fprintln(w, `</tr>`)
-	fmt.Fprintf(w, `<tr><td class="formcell"><b>Your cards</b><br/><i>(comma-separated, e.g. 'KD,10H')</i></td><td>%v <input type="text" id="yourcards" name="%v" value="%v"/></td>`, formatCards(yourCards), yourCardsKey, cardText(yourCards))
-	fmt.Fprintf(w, `<td><button type="button" onclick="$('#yourcards').val('%s')">Use sample</button></td></tr>`, strings.Join(simYourCards, ","))
-	fmt.Fprintf(w, `<tr><td class="formcell"><b>Table cards</b></td><td>%v <input id="tablecards" type="text" name="%v" value="%v"/></td>`, formatCards(tableCards), tableCardsKey, cardText(tableCards))
-	fmt.Fprintln(w, `<td>`)
-	fmt.Fprintf(w, `<button type="button" onclick="$('#tablecards').val('%s')">Use sample flop</button>`, strings.Join(simTableCards[:3], ","))
-	fmt.Fprintf(w, `<button type="button" onclick="$('#tablecards').val('%s')">Use sample turn</button>`, strings.Join(simTableCards[:4], ","))
-	fmt.Fprintf(w, `<button type="button" onclick="$('#tablecards').val('%s')">Use sample river</button>`, strings.Join(simTableCards[:5], ","))
-	fmt.Fprintln(w, `</td></tr>`)
-	fmt.Fprintf(w, `<tr><td class="formcell"><b>Simulations</b></td><td><input type="text" name="%v" value="%v"/></td></tr>`, simCountKey, simulator.HandCount)
-	fmt.Fprintf(w, "</td></tr></table>")
-	fmt.Fprintf(w, "</form></div></div>")
+	fmt.Fprintln(w, `<div class="form-group">`)
+	fmt.Fprintln(w, `<label for="playercount">Players</label>`)
+	fmt.Fprintf(w, `<input id="playercount" type="text" name="%v" value="%v" class="form-control"/>`, playersKey, players)
+	fmt.Fprintln(w, `<button type="button" class="btn btn-default" onclick="$('#playercount').val(Math.max(2, $('#playercount').val()-1))">Fewer</button>`)
+	fmt.Fprintln(w, `</div>`)
+
+	fmt.Fprintln(w, `<div class="form-group">`)
+	fmt.Fprintln(w, `<label for="yourcards">Your cards <i>(comma-separated, e.g. 'KD,10H')</i></label>`)
+	fmt.Fprintf(w, `%v `, formatCards(yourCards))
+	fmt.Fprintf(w, `<input type="text" id="yourcards" name="%v" value="%v" class="form-control"/>`, yourCardsKey, cardText(yourCards))
+	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#yourcards').val('%s')">Use sample</button>`, strings.Join(simYourCards, ","))
+	fmt.Fprintln(w, `</div>`)
+
+	fmt.Fprintln(w, `<div class="form-group">`)
+	fmt.Fprintln(w, `<label for="tablecards">Table cards</label> `)
+	fmt.Fprintf(w, `%v `, formatCards(tableCards))
+	fmt.Fprintf(w, `<input id="tablecards" type="text" name="%v" value="%v" class="form-control"/>`, tableCardsKey, cardText(tableCards))
+	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample flop</button>`, strings.Join(simTableCards[:3], ","))
+	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample turn</button>`, strings.Join(simTableCards[:4], ","))
+	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample river</button>`, strings.Join(simTableCards[:5], ","))
+	fmt.Fprintln(w, `</div>`)
+
+	fmt.Fprintln(w, `<div class="form-group">`)
+	fmt.Fprintln(w, `<label for="simcount">Simulations</label>`)
+	fmt.Fprintf(w, `<input id="simcount" type="text" name="%v" value="%v" class="form-control"/>`, simCountKey, simulator.HandCount)
+	fmt.Fprintln(w, `</div>`)
+	fmt.Fprintln(w, "</form></div></div>")
 
 	fmt.Fprintf(w, "<h2>Results</h2>")
 	printResultGraphs(w, simulator, tableCards, yourCards)
