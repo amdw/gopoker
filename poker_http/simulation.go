@@ -255,7 +255,7 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 		printPctCell(randOppStats.WinCount, simulator.HandCount)
 		fmt.Fprintln(w, "</tr>")
 	}
-	fmt.Fprintln(w, `<div class="table-responsive"><table class="table table-bordered"><tr><th rowspan="2">Hand</th>`)
+	fmt.Fprintln(w, `<div class="table-responsive"><table class="table table-bordered table-condensed"><tr><th rowspan="2">Hand</th>`)
 	printHeadCell("For you", 7)
 	printHeadCell("For best opponent", 5)
 	printHeadCell("For random opponent", 4)
