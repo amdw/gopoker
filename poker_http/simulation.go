@@ -358,6 +358,7 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, `<label for="playercount">Players</label>`)
 	fmt.Fprintf(w, `<input id="playercount" type="text" name="%v" value="%v" class="form-control"/>`, playersKey, players)
 	fmt.Fprintln(w, `<button type="button" class="btn btn-default" onclick="$('#playercount').val(Math.max(2, $('#playercount').val()-1))">Fewer</button>`)
+	fmt.Fprintln(w, `<button type="button" class="btn btn-default" onclick="$('#playercount').val(parseInt($('#playercount').val())+1)">More</button>`)
 	fmt.Fprintln(w, `</div>`)
 
 	fmt.Fprintln(w, `<div class="form-group">`)
@@ -371,8 +372,8 @@ func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, `<label for="tablecards">Table cards</label> `)
 	fmt.Fprintf(w, `%v `, formatCards(tableCards))
 	fmt.Fprintf(w, `<input id="tablecards" type="text" name="%v" value="%v" class="form-control"/>`, tableCardsKey, cardText(tableCards))
-	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample flop</button>`, strings.Join(simTableCards[:3], ","))
-	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample turn</button>`, strings.Join(simTableCards[:4], ","))
+	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample flop</button> `, strings.Join(simTableCards[:3], ","))
+	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample turn</button> `, strings.Join(simTableCards[:4], ","))
 	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample river</button>`, strings.Join(simTableCards[:5], ","))
 	fmt.Fprintln(w, `</div>`)
 
