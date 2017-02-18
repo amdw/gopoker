@@ -51,9 +51,24 @@ func TestSim(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
-	SimulateHoldem(rec, req)
+	// Create temp dir to hold the static assets
+	dir, err := ioutil.TempDir("", "gopokersimulatorstatic")
+	if err != nil {
+		t.Fatalf("Could not create temp dir for static assets: %v", err)
+	}
+	defer os.RemoveAll(dir)
+	t.Log("Created temp dir", dir)
+	filenames := []string{"simulation_head.html", "simulation_foot.html", "simulation.js"}
+	for _, filename := range filenames {
+		path := path.Join(dir, filename)
+		err = ioutil.WriteFile(path, []byte(filename), 0644)
+		if err != nil {
+			t.Fatalf("Could not write temp file %v: %v", path, err)
+		}
+	}
+	SimulateHoldem(dir)(rec, req)
 	if rec.Code != 200 {
-		t.Errorf("Got HTTP error %v", rec.Code)
+		t.Errorf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
 	}
 }
 
@@ -65,7 +80,7 @@ func TestStartingCardsHome(t *testing.T) {
 	}
 	// Create a temp dir to hold the HTML (doesn't matter that it's not real HTML)
 	// This is easier than locating the actual HTML file reliably...
-	dir, err := ioutil.TempDir("", "gopokerhtml")
+	dir, err := ioutil.TempDir("", "gopokerstartcardsstatic")
 	if err != nil {
 		t.Fatalf("Could not create temp dir for HTML: %v", err)
 	}
