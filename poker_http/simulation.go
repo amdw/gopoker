@@ -25,7 +25,10 @@ import (
 	"fmt"
 	"github.com/amdw/gopoker/poker"
 	"html/template"
+	"io"
 	"net/http"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -285,109 +288,94 @@ func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
 	fmt.Fprintf(w, "</table></div>")
 }
 
-func sampleCards(inputTableCards, inputYourCards []poker.Card) ([]string, []string) {
-	samplePack := poker.SamplePack(inputTableCards, inputYourCards)
-	tableCards, yourCards, _ := samplePack.PlayHoldem(1)
-	tcStrings := make([]string, len(tableCards))
-	for i, c := range tableCards {
-		tcStrings[i] = c.String()
+func loadStaticFiles(staticBaseDir string) (*os.File, *os.File, *os.File, error) {
+	filenames := []string{"simulation_head.html", "simulation_foot.html", "simulation.js"}
+	files := make([]*os.File, len(filenames))
+	for i, filename := range filenames {
+		path := path.Join(staticBaseDir, filename)
+		var err error
+		files[i], err = os.Open(path)
+		if err != nil {
+			return nil, nil, nil, errors.New(fmt.Sprintf("Could not load %v: %v", path, err))
+		}
 	}
-	ycStrings := make([]string, len(yourCards[0]))
-	for i, c := range yourCards[0] {
-		ycStrings[i] = c.String()
-	}
-	return tcStrings, ycStrings
+	return files[0], files[1], files[2], nil
 }
 
-func SimulateHoldem(w http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	fmt.Fprintln(w, "<!DOCTYPE html>")
-	fmt.Fprintln(w, `<html lang="en">`)
-	fmt.Fprintln(w, "<head>")
-	fmt.Fprintln(w, `<meta charset="utf-8">`)
-	fmt.Fprintln(w, `<meta http-equiv="X-UA-Compatible" content="IE=edge">`)
-	fmt.Fprintln(w, `<meta name="viewport" content="width=device-width, initial-scale=1">`)
-	fmt.Fprintln(w, "<title>Texas Hold'em simulator</title>")
-	fmt.Fprintln(w, `<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">`)
-	fmt.Fprintln(w, "<style>")
-	fmt.Fprintln(w, "th { text-align: center }")
-	fmt.Fprintln(w, "td.numcell { text-align: right }")
-	fmt.Fprintln(w, "td.zero { color: lightgrey }")
-	fmt.Fprintln(w, ".summary { font-weight: bold }")
-	fmt.Fprintln(w, "</style>")
-	fmt.Fprintf(w, `<script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>`)
-	fmt.Fprintf(w, `<script src="//code.highcharts.com/highcharts.js"></script>`)
-	fmt.Fprintf(w, "</head><body>")
-	fmt.Fprintln(w, `<div class="container-fluid">`)
-	fmt.Fprintln(w, "<h1>Texas Hold'em Simulator</h1>")
-
-	players, err := getPlayers(req)
+func writeStaticFile(file *os.File, w http.ResponseWriter) bool {
+	_, err := io.Copy(w, file)
 	if err != nil {
-		// Use a template for security as error messages will often contain raw user input
-		t := template.Must(template.New("error").Parse("<p>Could not get player count: {{.}}</p></div></body></html>"))
-		t.Execute(w, err.Error())
-		return
+		http.Error(w, fmt.Sprintf("Could not write static file: %v", err), http.StatusInternalServerError)
+		return false
 	}
+	return true
+}
 
-	tableCards, yourCards, handsToPlay, err := simulationParams(req)
+func cardsJson(cards []poker.Card) string {
+	cardStrings := make([]string, len(cards))
+	for i, card := range cards {
+		cardStrings[i] = card.String()
+	}
+	jsonBytes, err := json.Marshal(cardStrings)
 	if err != nil {
-		t := template.Must(template.New("error").Parse("<p>Could not get simulation parameters: {{.}}</p></div></body></html>"))
-		t.Execute(w, err.Error())
-		return
+		panic(fmt.Sprintf("Unable to marshal cards %v: %v", cards, err))
 	}
+	return string(jsonBytes)
+}
 
-	simulator := poker.Simulator{}
-	simulator.SimulateHoldem(tableCards, yourCards, players, handsToPlay)
-	simTableCards, simYourCards := sampleCards(tableCards, yourCards)
-	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
-	fmt.Fprintln(w, `<form method="get">`)
+func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		req.ParseForm()
 
-	fmt.Fprintln(w, `<div class="form-group">`)
-	fmt.Fprintln(w, `<input type="submit" class="btn btn-primary" value="Rerun"/>`)
-	fmt.Fprintln(w, `<a href="/simulate" class="btn btn-warning">Reset</a>`)
-	fmt.Fprintln(w, `</div>`)
-
-	cardText := func(cards []poker.Card) string {
-		text := make([]string, len(cards))
-		for i, c := range cards {
-			text[i] = c.String()
+		headFile, footFile, jsFile, err := loadStaticFiles(staticBaseDir)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error loading static files: %v", err), http.StatusInternalServerError)
+			return
 		}
-		return strings.Join(text, ",")
+		defer headFile.Close()
+		defer footFile.Close()
+		defer jsFile.Close()
+
+		players, err := getPlayers(req)
+		if err != nil {
+			// Use a template for security as error messages will often contain raw user input
+			t := template.Must(template.New("error").Parse("<p>Could not get player count: {{.}}</p></div></body></html>"))
+			t.Execute(w, err.Error())
+			return
+		}
+
+		tableCards, yourCards, handsToPlay, err := simulationParams(req)
+		if err != nil {
+			t := template.Must(template.New("error").Parse("<p>Could not get simulation parameters: {{.}}</p></div></body></html>"))
+			t.Execute(w, err.Error())
+			return
+		}
+
+		if !writeStaticFile(headFile, w) {
+			return
+		}
+
+		simulator := poker.Simulator{}
+		simulator.SimulateHoldem(tableCards, yourCards, players, handsToPlay)
+
+		fmt.Fprintf(w, "<h2>Results</h2>")
+		printResultGraphs(w, simulator, tableCards, yourCards)
+		fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
+		printResultTable(w, simulator)
+		fmt.Fprintln(w, `</div></div>`)
+
+		fmt.Fprintln(w, "<script>")
+		fmt.Fprintf(w, "var initPlayerCount = %v;\n", players)
+		fmt.Fprintf(w, "var initYourCards = %v;\n", cardsJson(yourCards))
+		fmt.Fprintf(w, "var initTableCards = %v;\n", cardsJson(tableCards))
+		fmt.Fprintf(w, "var initSimCount = %v;\n", handsToPlay)
+		if !writeStaticFile(jsFile, w) {
+			return
+		}
+		fmt.Fprintln(w, "</script>")
+
+		if !writeStaticFile(footFile, w) {
+			return
+		}
 	}
-	fmt.Fprintln(w, `<div class="form-group">`)
-	fmt.Fprintln(w, `<label for="playercount">Players</label>`)
-	fmt.Fprintf(w, `<input id="playercount" type="text" name="%v" value="%v" class="form-control"/>`, playersKey, players)
-	fmt.Fprintln(w, `<button type="button" class="btn btn-default" onclick="$('#playercount').val(Math.max(2, $('#playercount').val()-1))">Fewer</button>`)
-	fmt.Fprintln(w, `<button type="button" class="btn btn-default" onclick="$('#playercount').val(parseInt($('#playercount').val())+1)">More</button>`)
-	fmt.Fprintln(w, `</div>`)
-
-	fmt.Fprintln(w, `<div class="form-group">`)
-	fmt.Fprintln(w, `<label for="yourcards">Your cards <i>(comma-separated, e.g. 'KD,10H')</i></label>`)
-	fmt.Fprintf(w, `%v `, formatCards(yourCards))
-	fmt.Fprintf(w, `<input type="text" id="yourcards" name="%v" value="%v" class="form-control"/>`, yourCardsKey, cardText(yourCards))
-	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#yourcards').val('%s')">Use sample</button>`, strings.Join(simYourCards, ","))
-	fmt.Fprintln(w, `</div>`)
-
-	fmt.Fprintln(w, `<div class="form-group">`)
-	fmt.Fprintln(w, `<label for="tablecards">Table cards</label> `)
-	fmt.Fprintf(w, `%v `, formatCards(tableCards))
-	fmt.Fprintf(w, `<input id="tablecards" type="text" name="%v" value="%v" class="form-control"/>`, tableCardsKey, cardText(tableCards))
-	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample flop</button> `, strings.Join(simTableCards[:3], ","))
-	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample turn</button> `, strings.Join(simTableCards[:4], ","))
-	fmt.Fprintf(w, `<button type="button" class="btn btn-default" onclick="$('#tablecards').val('%s')">Use sample river</button>`, strings.Join(simTableCards[:5], ","))
-	fmt.Fprintln(w, `</div>`)
-
-	fmt.Fprintln(w, `<div class="form-group">`)
-	fmt.Fprintln(w, `<label for="simcount">Simulations</label>`)
-	fmt.Fprintf(w, `<input id="simcount" type="text" name="%v" value="%v" class="form-control"/>`, simCountKey, simulator.HandCount)
-	fmt.Fprintln(w, `</div>`)
-	fmt.Fprintln(w, "</form></div></div>")
-
-	fmt.Fprintf(w, "<h2>Results</h2>")
-	printResultGraphs(w, simulator, tableCards, yourCards)
-	fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
-	printResultTable(w, simulator)
-	fmt.Fprintln(w, `</div></div>`)
-
-	fmt.Fprintf(w, "</div></body></html>")
 }

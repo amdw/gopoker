@@ -44,6 +44,7 @@ func StartingCards(staticBaseDir string) func(http.ResponseWriter, *http.Request
 			http.Error(w, fmt.Sprintf("Could not load %v: %v", path, err), http.StatusInternalServerError)
 			return
 		}
+		defer file.Close()
 		_, err = io.Copy(w, file)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Could not write %v: %v", path, err), http.StatusInternalServerError)

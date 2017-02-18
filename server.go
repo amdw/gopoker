@@ -74,7 +74,7 @@ func main() {
 
 	http.HandleFunc("/", poker_http.Menu)
 	http.HandleFunc("/play", poker_http.PlayHoldem)
-	http.HandleFunc("/simulate", poker_http.SimulateHoldem)
+	http.HandleFunc("/simulate", poker_http.SimulateHoldem(staticBaseDir))
 	http.HandleFunc("/startingcards", poker_http.StartingCards(staticBaseDir))
 	http.HandleFunc("/startingcards/sim", poker_http.SimulateStartingCards)
 	err = http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
