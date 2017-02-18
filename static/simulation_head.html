@@ -45,6 +45,7 @@ td.zero { color: lightgrey }
 <button ng-repeat="rank in legalRanks" type="button" class="btn btn-default" ng-click="setYourPendingRank(rank)" ng-class="yourRankButtonClasses(rank)" ng-disabled="yourCardsFull()">{{rank}}</button>
 <br/>
 <button type="button" class="btn btn-default" ng-click="yourCardsRandom()">Random</button>
+<button ng-click="rerun()" class="btn btn-primary">Rerun</button>
 </div>
 
 <div class="form-group">
@@ -56,6 +57,7 @@ td.zero { color: lightgrey }
 <button type="button" class="btn btn-default" ng-click="flopRandom()">Random flop</button>
 <button type="button" class="btn btn-default" ng-click="turnRandom()">Random turn</button>
 <button type="button" class="btn btn-default" ng-click="riverRandom()">Random river</button>
+<button ng-click="rerun()" class="btn btn-primary">Rerun</button>
 </div>
 
 <div class="form-group">
