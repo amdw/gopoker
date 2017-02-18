@@ -36,9 +36,9 @@ const rank2Key = "rank2"
 const sameSuitKey = "samesuit"
 const handsToPlayKey = "handstoplay"
 
-func StartingCards(htmlBaseDir string) func(http.ResponseWriter, *http.Request) {
+func StartingCards(staticBaseDir string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		path := path.Join(htmlBaseDir, "starting_cards.html")
+		path := path.Join(staticBaseDir, "starting_cards.html")
 		file, err := os.Open(path)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Could not load %v: %v", path, err), http.StatusInternalServerError)

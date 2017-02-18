@@ -30,14 +30,14 @@ import (
 	"path/filepath"
 )
 
-// Try some sensible defaults to get the HTML path
-func defaultHtmlBaseDir() string {
+// Try some sensible defaults to get the static content path
+func defaultStaticBaseDir() string {
 	// First try something GOPATH-relative as this is most likely to work
 	gopath := os.Getenv("GOPATH")
 	if gopath != "" {
 		gopaths := filepath.SplitList(gopath)
 		for _, p := range gopaths {
-			candidate := path.Join(p, "src", "github.com", "amdw", "gopoker", "html")
+			candidate := path.Join(p, "src", "github.com", "amdw", "gopoker", "static")
 			log.Println("Trying", candidate)
 			dirInfo, err := os.Stat(candidate)
 			if err == nil && dirInfo.IsDir() {
@@ -49,33 +49,33 @@ func defaultHtmlBaseDir() string {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		log.Println("Warning: could not get current working directory:", err)
-		return "./html"
+		return "./static"
 	}
-	return path.Join(currentDir, "html")
+	return path.Join(currentDir, "static")
 }
 
 func main() {
 	var port int
-	var htmlBaseDir string
+	var staticBaseDir string
 	flag.IntVar(&port, "port", 8080, "Listen port for HTTP server")
-	flag.StringVar(&htmlBaseDir, "htmlbasedir", defaultHtmlBaseDir(), "Base directory containing HTML")
+	flag.StringVar(&staticBaseDir, "staticbasedir", defaultStaticBaseDir(), "Base directory containing static content")
 	flag.Parse()
 
-	dirInfo, err := os.Stat(htmlBaseDir)
+	dirInfo, err := os.Stat(staticBaseDir)
 	if err != nil {
-		log.Fatalf("Could not stat HTML base dir '%v' - provide it on the command line or ensure GOPATH is set correctly.\n(Error: %v)", htmlBaseDir, err)
+		log.Fatalf("Could not stat static content base dir '%v' - provide it on the command line or ensure GOPATH is set correctly.\n(Error: %v)", staticBaseDir, err)
 	}
 	if !dirInfo.IsDir() {
-		log.Fatalf("htmlbasedir '%v' is not a directory", htmlBaseDir)
+		log.Fatalf("staticbasedir '%v' is not a directory", staticBaseDir)
 	}
 
-	log.Println("Using HTML base dir", htmlBaseDir)
+	log.Println("Using static content base dir", staticBaseDir)
 	log.Printf("Listening on port %v...\n", port)
 
 	http.HandleFunc("/", poker_http.Menu)
 	http.HandleFunc("/play", poker_http.PlayHoldem)
 	http.HandleFunc("/simulate", poker_http.SimulateHoldem)
-	http.HandleFunc("/startingcards", poker_http.StartingCards(htmlBaseDir))
+	http.HandleFunc("/startingcards", poker_http.StartingCards(staticBaseDir))
 	http.HandleFunc("/startingcards/sim", poker_http.SimulateStartingCards)
 	err = http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 	if err != nil {
