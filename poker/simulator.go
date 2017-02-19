@@ -141,9 +141,9 @@ func (pair StartingPair) SampleCards() (Card, Card) {
 	return card1, card2
 }
 
-func (pair StartingPair) RunSimulation(players, handsToPlay int) Simulator {
+func (pair StartingPair) RunSimulation(players, handsToPlay int) *Simulator {
 	card1, card2 := pair.SampleCards()
-	result := Simulator{}
+	result := &Simulator{}
 	result.SimulateHoldem([]Card{}, []Card{card1, card2}, players, handsToPlay)
 	return result
 }

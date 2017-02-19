@@ -23,7 +23,7 @@ import (
 	"testing"
 )
 
-func assertSimSanity(sim Simulator, players, simulations int, t *testing.T) {
+func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
 	if sim.Players != players {
 		t.Errorf("Expected %v players, found %v", players, sim.Players)
 	}
@@ -99,7 +99,7 @@ func assertSimSanity(sim Simulator, players, simulations int, t *testing.T) {
 }
 
 func TestSimSanity(t *testing.T) {
-	sim := Simulator{}
+	sim := &Simulator{}
 	players := 5
 	simulations := 10000
 	sim.SimulateHoldem([]Card{}, []Card{}, players, simulations)

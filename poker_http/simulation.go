@@ -126,7 +126,7 @@ func printResultGraph(w http.ResponseWriter, title string, handNames []string, s
 	fmt.Fprintln(w, `</script>`)
 }
 
-func makeYourSeries(simulator poker.Simulator) ([]string, []map[string]interface{}) {
+func makeYourSeries(simulator *poker.Simulator) ([]string, []map[string]interface{}) {
 	handNames := make([]string, len(simulator.ClassWinCounts))
 	soleWinData := make([]float64, len(handNames))
 	jointWinData := make([]float64, len(handNames))
@@ -151,7 +151,7 @@ func makeYourSeries(simulator poker.Simulator) ([]string, []map[string]interface
 	return handNames, series
 }
 
-func makeBestOppSeries(simulator poker.Simulator) []map[string]interface{} {
+func makeBestOppSeries(simulator *poker.Simulator) []map[string]interface{} {
 	winData := make([]float64, len(simulator.ClassBestOppWinCounts))
 	lossData := make([]float64, len(winData))
 	for class := range simulator.ClassBestOppWinCounts {
@@ -170,7 +170,7 @@ func makeBestOppSeries(simulator poker.Simulator) []map[string]interface{} {
 	return series
 }
 
-func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator, tableCards, yourCards []poker.Card) {
+func printResultGraphs(w http.ResponseWriter, simulator *poker.Simulator, tableCards, yourCards []poker.Card) {
 	fmt.Fprintln(w, `<div class="row">`)
 
 	fmt.Fprintln(w, `<div class="col-md-6">`)
@@ -201,7 +201,7 @@ type playerStats struct {
 	BestHand      string
 }
 
-func printResultTable(w http.ResponseWriter, simulator poker.Simulator) {
+func printResultTable(w http.ResponseWriter, simulator *poker.Simulator) {
 	cssClass := func(isNum, isZero bool) string {
 		classes := []string{}
 		if isNum {
@@ -355,7 +355,7 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 			return
 		}
 
-		simulator := poker.Simulator{}
+		simulator := &poker.Simulator{}
 		simulator.SimulateHoldem(tableCards, yourCards, players, handsToPlay)
 
 		fmt.Fprintf(w, "<h2>Results</h2>")
