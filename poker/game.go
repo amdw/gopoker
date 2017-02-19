@@ -62,6 +62,7 @@ type Pack struct {
 }
 
 func (p *Pack) initialise() {
+	// Not cryptographically secure, but fine for simulation, where performance is more important
 	p.randGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	i := 0
@@ -84,13 +85,11 @@ func (p *Pack) Shuffle() {
 // Shuffle the pack, but fix certain cards in place. For use in simulations.
 // It is assumed that there are no duplicate cards in (tableCards+yourCards).
 func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
-	if len(tableCards) > 5 {
-		panic(fmt.Sprintf("Maximum of 5 table cards supported, found %v", len(tableCards)))
+	if len(tableCards) > 5 || len(yourCards) > 2 {
+		panic(fmt.Sprintf("Maximum of 5 table cards and 2 hole cards supported, found %v and %v", len(tableCards), len(yourCards)))
 	}
-	// Remove fixed cards from the pack, shuffle those, and fill them in
-	nonFixedCards := make([]Card, 52-len(yourCards)-len(tableCards))
 
-	indexOf := func(cards []Card, card Card) int {
+	indexOf := func(cards [52]Card, card Card) int {
 		result := -1
 		for i, c := range cards {
 			if c == card {
@@ -101,26 +100,17 @@ func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
 		return result
 	}
 
-	i := 0
-	for _, c := range p.Cards {
-		if indexOf(yourCards, c) == -1 && indexOf(tableCards, c) == -1 {
-			nonFixedCards[i] = c
-			i++
-		}
+	// Just shuffle the pack and then swap the fixed cards into place from wherever they are in the deck
+	p.Shuffle()
+	for i := 0; i < len(tableCards); i++ {
+		swapIdx := indexOf(p.Cards, tableCards[i])
+		p.Cards[i], p.Cards[swapIdx] = p.Cards[swapIdx], p.Cards[i]
 	}
-	for i = 0; i < len(nonFixedCards); i++ {
-		j := p.randGen.Intn(len(nonFixedCards)-i) + i
-		nonFixedCards[i], nonFixedCards[j] = nonFixedCards[j], nonFixedCards[i]
+	for i := 0; i < len(yourCards); i++ {
+		swapIdx := indexOf(p.Cards, yourCards[i])
+		targetIdx := i + 5
+		p.Cards[targetIdx], p.Cards[swapIdx] = p.Cards[swapIdx], p.Cards[targetIdx]
 	}
-
-	copy(p.Cards[0:len(tableCards)], tableCards)
-
-	// If not all table cards were supplied, fill in the gaps from the non-fixed cards
-	for i = 0; i < 5-len(tableCards); i++ {
-		p.Cards[i+len(tableCards)] = nonFixedCards[i]
-	}
-	copy(p.Cards[5:5+len(yourCards)], yourCards)
-	copy(p.Cards[5+len(yourCards):52], nonFixedCards[i:len(nonFixedCards)])
 }
 
 func (p *Pack) Deal(players int) (onTable []Card, playerCards [][]Card) {
