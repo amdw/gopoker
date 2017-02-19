@@ -123,9 +123,7 @@ func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
 	copy(p.Cards[5+len(yourCards):52], nonFixedCards[i:len(nonFixedCards)])
 }
 
-// Play out a hand of holdem, and return the table cards, the player cards for each player, and a sorted list of player outcomes.
-// Equivalent hands are sorted by player number.
-func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, outcomes []PlayerOutcome) {
+func (p *Pack) Deal(players int) (onTable []Card, playerCards [][]Card) {
 	if players < 1 {
 		panic(fmt.Sprintf("At least one player required, found %v", players))
 	}
@@ -133,22 +131,29 @@ func (p *Pack) PlayHoldem(players int) (onTable []Card, playerCards [][]Card, ou
 	onTable = p.Cards[0:5]
 
 	playerCards = make([][]Card, players)
-	outcomes = make([]PlayerOutcome, players)
 	for player := 0; player < players; player++ {
 		playerCards[player] = p.Cards[5+2*player : 7+2*player]
+	}
+
+	return onTable, playerCards
+}
+
+// Assess the hand each player holds and returna  sorted list of outcomes
+// by hand strength (descending) then player number (ascending).
+// Player numbers are in ascending order of playerCards entries, starting with 1.
+func DealOutcomes(onTable []Card, playerCards [][]Card) []PlayerOutcome {
+	outcomes := make([]PlayerOutcome, len(playerCards))
+	for playerIdx, hand := range playerCards {
 		// In Hold'em it is not mandatory to use the cards in your hand,
 		// so they are all optional
 		combinedCards := make([]Card, 7)
 		copy(combinedCards[0:5], onTable)
-		copy(combinedCards[5:7], playerCards[player])
+		copy(combinedCards[5:7], hand)
 		level, cards := Classify([]Card{}, combinedCards)
-		outcomes[player] = PlayerOutcome{player + 1, level, cards}
+		outcomes[playerIdx] = PlayerOutcome{playerIdx + 1, level, cards}
 	}
-
-	handSorter := HandSorter{outcomes}
-	sort.Sort(handSorter)
-
-	return onTable, playerCards, handSorter.Outcomes
+	sort.Sort(HandSorter{outcomes})
+	return outcomes
 }
 
 type SimulationResult struct {
@@ -159,7 +164,8 @@ type SimulationResult struct {
 // Play out one hand of Texas Hold'em and return whether or not player 1 won,
 // plus player 1's hand level, plus the best hand level of any of player 1's opponents.
 func (p *Pack) SimulateOneHoldemHand(players int) SimulationResult {
-	_, _, outcomes := p.PlayHoldem(players)
+	onTable, playerCards := p.Deal(players)
+	outcomes := DealOutcomes(onTable, playerCards)
 
 	// This works even if player 1 was equal first, since equal hands are sorted by player
 	won := outcomes[0].Player == 1

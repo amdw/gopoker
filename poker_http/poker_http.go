@@ -81,7 +81,8 @@ func PlayHoldem(w http.ResponseWriter, req *http.Request) {
 
 	pack := poker.NewPack()
 	pack.Shuffle()
-	onTable, playerCards, sortedOutcomes := pack.PlayHoldem(players)
+	onTable, playerCards := pack.Deal(players)
+	sortedOutcomes := poker.DealOutcomes(onTable, playerCards)
 	fmt.Fprintf(w, "<h2>Table cards</h2><p>%v</p>", formatCards(onTable))
 	fmt.Fprintf(w, "<h2>Player cards</h2><ul>")
 	for player := 0; player < players; player++ {

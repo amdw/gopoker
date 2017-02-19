@@ -69,7 +69,8 @@ func TestHoldem(t *testing.T) {
 		pack := NewPack()
 		pack.Shuffle()
 		pack.shuffleFixing(testCase.TableCards, testCase.HandCards)
-		tableCards, playerCards, outcomes := pack.PlayHoldem(playerCount)
+		tableCards, playerCards := pack.Deal(playerCount)
+		outcomes := DealOutcomes(tableCards, playerCards)
 		if len(tableCards) != 5 {
 			t.Fatalf("Expected 5 table cards, found %v", len(tableCards))
 		}
@@ -132,7 +133,7 @@ func TestFixedShuffle(t *testing.T) {
 	for testNum := 0; testNum < 1000; testNum++ {
 		pack.Shuffle()
 		pack.shuffleFixing(tableCards, myCards)
-		tCards, pCards, _ := pack.PlayHoldem(2)
+		tCards, pCards := pack.Deal(5)
 		if !cardsEqual(tableCards, tCards) {
 			t.Errorf("Expected table cards %q, found %q", tableCards, tCards)
 		}
