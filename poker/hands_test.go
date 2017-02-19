@@ -154,29 +154,19 @@ func TestSorting(t *testing.T) {
 	}
 }
 
-type LexSorter struct {
-	hands [][]Card
-}
-
-func (ls LexSorter) Len() int {
-	return len(ls.hands)
-}
-
-func (ls LexSorter) Less(i, j int) bool {
-	for k := 0; k < len(ls.hands[i]) && k < len(ls.hands[j]); k++ {
-		c1, c2 := ls.hands[i][k], ls.hands[j][k]
-		if c1 != c2 {
-			if c1.Rank != c2.Rank {
-				return c1.Rank < c2.Rank
+func lexSortHands(hands [][]Card) {
+	sort.Slice(hands, func(i, j int) bool {
+		for k := 0; k < len(hands[i]) && k < len(hands[j]); k++ {
+			c1, c2 := hands[i][k], hands[j][k]
+			if c1 != c2 {
+				if c1.Rank != c2.Rank {
+					return c1.Rank < c2.Rank
+				}
+				return c1.Suit < c2.Suit
 			}
-			return c1.Suit < c2.Suit
 		}
-	}
-	return false
-}
-
-func (ls LexSorter) Swap(i, j int) {
-	ls.hands[i], ls.hands[j] = ls.hands[j], ls.hands[i]
+		return false
+	})
 }
 
 func TestAllChoices(t *testing.T) {
@@ -194,10 +184,10 @@ func TestAllChoices(t *testing.T) {
 		h("QD", "3C", "2H"),
 		h("JC", "3C", "2H"),
 	}
-	sort.Sort(LexSorter{expectedChoices})
+	lexSortHands(expectedChoices)
 
 	choices := allChoices(cards, 3)
-	sort.Sort(LexSorter{choices})
+	lexSortHands(choices)
 
 	if len(choices) != len(expectedChoices) {
 		t.Errorf("Expected %v choices, found %v: %v / %v", len(expectedChoices), len(choices), expectedChoices, choices)
