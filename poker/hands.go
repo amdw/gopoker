@@ -349,35 +349,22 @@ func containsAllCards(cards, testSubset []Card) bool {
 	return true
 }
 
-// Implements the sort.Interface interface to allow cards to be sorted in descending rank order.
-type CardSorter struct {
-	Cards  []Card
-	AceLow bool
-}
-
-func (cs CardSorter) Len() int {
-	return len(cs.Cards)
-}
-
-func (cs CardSorter) Swap(i, j int) {
-	cs.Cards[i], cs.Cards[j] = cs.Cards[j], cs.Cards[i]
-}
-
-// Cards are to be sorted in descending order of rank, so Less(c1,c2) is true iff c1 has a HIGHER rank than c2
-func (cs CardSorter) Less(i, j int) bool {
-	if cs.Cards[i].Rank != cs.Cards[j].Rank {
-		if cs.AceLow {
-			if cs.Cards[i].Rank == Ace {
-				return false
+func sortCards(cards []Card, aceLow bool) {
+	sort.Slice(cards, func(i, j int) bool {
+		if cards[i].Rank != cards[j].Rank {
+			if aceLow {
+				if cards[i].Rank == Ace {
+					return false
+				}
+				if cards[j].Rank == Ace {
+					return true
+				}
 			}
-			if cs.Cards[j].Rank == Ace {
-				return true
-			}
+			return cards[i].Rank > cards[j].Rank
 		}
-		return cs.Cards[i].Rank > cs.Cards[j].Rank
-	}
-	// Sort suits in an arbitrary way just to give a consistent ordering
-	return cs.Cards[i].Suit < cs.Cards[j].Suit
+		// Sort suits in an arbitrary way just to give a consistent ordering
+		return cards[i].Suit < cards[j].Suit
+	})
 }
 
 var noLevel = HandLevel{OnePair, []Rank{}}
@@ -560,7 +547,7 @@ func classifyHand(cards []Card) HandLevel {
 		panic(fmt.Sprintf("Expected exactly five cards, found %v", len(cards)))
 	}
 	// First sort the cards, as this makes some of the functions easier to write
-	sort.Sort(CardSorter{cards, false})
+	sortCards(cards, false)
 
 	countsByRank := make([]int, 13)
 	for _, c := range cards {
