@@ -32,28 +32,18 @@ type PlayerOutcome struct {
 	Cards  []Card
 }
 
-type HandSorter struct {
-	Outcomes []PlayerOutcome
-}
-
-func (hs HandSorter) Len() int {
-	return len(hs.Outcomes)
-}
-
-func (hs HandSorter) Swap(i, j int) {
-	hs.Outcomes[i], hs.Outcomes[j] = hs.Outcomes[j], hs.Outcomes[i]
-}
-
-func (hs HandSorter) Less(i, j int) bool {
-	iBeatsJ := Beats(hs.Outcomes[i].Level, hs.Outcomes[j].Level)
-	jBeatsI := Beats(hs.Outcomes[j].Level, hs.Outcomes[i].Level)
-	if iBeatsJ && !jBeatsI {
-		return true
-	}
-	if jBeatsI && !iBeatsJ {
-		return false
-	}
-	return hs.Outcomes[i].Player < hs.Outcomes[j].Player
+func sortHands(outcomes []PlayerOutcome) {
+	sort.Slice(outcomes, func(i, j int) bool {
+		iBeatsJ := Beats(outcomes[i].Level, outcomes[j].Level)
+		jBeatsI := Beats(outcomes[j].Level, outcomes[i].Level)
+		if iBeatsJ && !jBeatsI {
+			return true
+		}
+		if jBeatsI && !iBeatsJ {
+			return false
+		}
+		return outcomes[i].Player < outcomes[j].Player
+	})
 }
 
 type Pack struct {
@@ -142,7 +132,7 @@ func DealOutcomes(onTable []Card, playerCards [][]Card) []PlayerOutcome {
 		level, cards := Classify([]Card{}, combinedCards)
 		outcomes[playerIdx] = PlayerOutcome{playerIdx + 1, level, cards}
 	}
-	sort.Sort(HandSorter{outcomes})
+	sortHands(outcomes)
 	return outcomes
 }
 
