@@ -179,31 +179,31 @@ func TestSimInternalSanity(t *testing.T) {
 	tests := 1000
 	for i := 0; i < tests; i++ {
 		p.Shuffle()
-		won, opponentWon, ourLevel, bestOpponentLevel, randomOpponentLevel := p.SimulateOneHoldemHand(5)
-		if !won && !opponentWon {
+		res := p.SimulateOneHoldemHand(5)
+		if !res.Won && !res.OpponentWon {
 			t.Errorf("Simulator says nobody won!")
 		}
-		if Beats(randomOpponentLevel, bestOpponentLevel) {
-			t.Errorf("Random opponent level %v beats best level %v", randomOpponentLevel, bestOpponentLevel)
+		if Beats(res.RandomOpponentLevel, res.BestOpponentLevel) {
+			t.Errorf("Random opponent level %v beats best level %v", res.RandomOpponentLevel, res.BestOpponentLevel)
 		}
-		if won {
-			if Beats(bestOpponentLevel, ourLevel) {
-				t.Errorf("Simulator says we won but best opponent %v beats our %v", bestOpponentLevel, ourLevel)
+		if res.Won {
+			if Beats(res.BestOpponentLevel, res.OurLevel) {
+				t.Errorf("Simulator says we won but best opponent %v beats our %v", res.BestOpponentLevel, res.OurLevel)
 			}
-			if Beats(randomOpponentLevel, ourLevel) {
-				t.Errorf("Simulator says we won but random opponent %v beats our %v", randomOpponentLevel, ourLevel)
+			if Beats(res.RandomOpponentLevel, res.OurLevel) {
+				t.Errorf("Simulator says we won but random opponent %v beats our %v", res.RandomOpponentLevel, res.OurLevel)
 			}
 		} else {
-			if !Beats(bestOpponentLevel, ourLevel) {
-				t.Errorf("Simulator says we lost but their %v doesn't beat our %v", bestOpponentLevel, ourLevel)
+			if !Beats(res.BestOpponentLevel, res.OurLevel) {
+				t.Errorf("Simulator says we lost but their %v doesn't beat our %v", res.BestOpponentLevel, res.OurLevel)
 			}
 		}
-		if opponentWon {
-			if Beats(ourLevel, bestOpponentLevel) {
-				t.Errorf("Simulator says opponent won but our %v beats their %v", ourLevel, bestOpponentLevel)
+		if res.OpponentWon {
+			if Beats(res.OurLevel, res.BestOpponentLevel) {
+				t.Errorf("Simulator says opponent won but our %v beats their %v", res.OurLevel, res.BestOpponentLevel)
 			}
-			if Beats(randomOpponentLevel, bestOpponentLevel) {
-				t.Errorf("Simulator says opponent won but random opponent %v beats their %v", randomOpponentLevel, bestOpponentLevel)
+			if Beats(res.RandomOpponentLevel, res.BestOpponentLevel) {
+				t.Errorf("Simulator says opponent won but random opponent %v beats their %v", res.RandomOpponentLevel, res.BestOpponentLevel)
 			}
 		}
 	}
