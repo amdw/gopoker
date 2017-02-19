@@ -148,20 +148,17 @@ func DealOutcomes(onTable []Card, playerCards [][]Card) []PlayerOutcome {
 
 type SimulationResult struct {
 	Won, OpponentWon                                 bool
+	PotFractionWon                                   float64
 	OurLevel, BestOpponentLevel, RandomOpponentLevel HandLevel
 }
 
-// Play out one hand of Texas Hold'em and return whether or not player 1 won,
-// plus player 1's hand level, plus the best hand level of any of player 1's opponents.
-func (p *Pack) SimulateOneHoldemHand(players int) SimulationResult {
-	onTable, playerCards := p.Deal(players)
-	outcomes := DealOutcomes(onTable, playerCards)
-
+func calcSimResult(outcomes []PlayerOutcome, randGen *rand.Rand) SimulationResult {
 	// This works even if player 1 was equal first, since equal hands are sorted by player
 	won := outcomes[0].Player == 1
 
 	var ourOutcome PlayerOutcome
-	opponentOutcomes := make([]PlayerOutcome, players-1)
+	opponentOutcomes := make([]PlayerOutcome, len(outcomes)-1)
+	potSplit := 0
 	i := 0
 	for _, o := range outcomes {
 		if o.Player == 1 {
@@ -170,13 +167,32 @@ func (p *Pack) SimulateOneHoldemHand(players int) SimulationResult {
 			opponentOutcomes[i] = o
 			i++
 		}
+		if !Beats(outcomes[0].Level, o.Level) {
+			// The best hand doesn't beat this hand so it must be a winner
+			potSplit++
+		}
 	}
 
 	opponentWon := !Beats(ourOutcome.Level, opponentOutcomes[0].Level)
 
-	randomOpponentLevel := opponentOutcomes[p.randGen.Intn(len(opponentOutcomes))].Level
+	randomOpponentLevel := opponentOutcomes[randGen.Intn(len(opponentOutcomes))].Level
 
-	return SimulationResult{won, opponentWon, ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel}
+	var potFractionWon float64
+	if won {
+		potFractionWon = 1.0 / float64(potSplit)
+	} else {
+		potFractionWon = 0
+	}
+
+	return SimulationResult{won, opponentWon, potFractionWon, ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel}
+}
+
+// Play out one hand of Texas Hold'em and return whether or not player 1 won,
+// plus player 1's hand level, plus the best hand level of any of player 1's opponents.
+func (p *Pack) SimulateOneHoldemHand(players int) SimulationResult {
+	onTable, playerCards := p.Deal(players)
+	outcomes := DealOutcomes(onTable, playerCards)
+	return calcSimResult(outcomes, p.randGen)
 }
 
 func NewPack() Pack {

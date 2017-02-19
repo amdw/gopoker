@@ -20,6 +20,7 @@ along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 package poker
 
 import (
+	"math"
 	"math/rand"
 	"testing"
 )
@@ -175,6 +176,28 @@ func TestFixedShuffle(t *testing.T) {
 	}
 }
 
+func TestSharedPot(t *testing.T) {
+	winOutcome := PlayerOutcome{1, hl(Straight, Eight), []Card{}}
+	loseOutcome := PlayerOutcome{1, hl(TwoPair, Eight, Six, Two), []Card{}}
+	rng := rand.New(rand.NewSource(1234))
+	for split := 1; split < 10; split++ {
+		outcomes := make([]PlayerOutcome, 10)
+		for i := 0; i < split; i++ {
+			winOutcome.Player = i + 1
+			outcomes[i] = winOutcome
+		}
+		for i := split; i < len(outcomes); i++ {
+			loseOutcome.Player = i + 1
+			outcomes[i] = loseOutcome
+		}
+		res := calcSimResult(outcomes, rng)
+		expectedWin := 1.0 / float64(split)
+		if math.Abs(res.PotFractionWon-expectedWin) > 1e-6 {
+			t.Errorf("Expected %v-way split to win %v of pot, found %v", split, expectedWin, res.PotFractionWon)
+		}
+	}
+}
+
 func TestSimInternalSanity(t *testing.T) {
 	p := NewPack()
 	tests := 1000
@@ -187,6 +210,9 @@ func TestSimInternalSanity(t *testing.T) {
 		if Beats(res.RandomOpponentLevel, res.BestOpponentLevel) {
 			t.Errorf("Random opponent level %v beats best level %v", res.RandomOpponentLevel, res.BestOpponentLevel)
 		}
+		if res.PotFractionWon < 0 || res.PotFractionWon > 1 {
+			t.Errorf("Pot fraction won must be between 0 and 1: %v", res.PotFractionWon)
+		}
 		if res.Won {
 			if Beats(res.BestOpponentLevel, res.OurLevel) {
 				t.Errorf("Simulator says we won but best opponent %v beats our %v", res.BestOpponentLevel, res.OurLevel)
@@ -194,9 +220,15 @@ func TestSimInternalSanity(t *testing.T) {
 			if Beats(res.RandomOpponentLevel, res.OurLevel) {
 				t.Errorf("Simulator says we won but random opponent %v beats our %v", res.RandomOpponentLevel, res.OurLevel)
 			}
+			if math.Abs(res.PotFractionWon) < 1e-6 {
+				t.Errorf("Simulator says we won but we didn't win any of the pot: %v", res.PotFractionWon)
+			}
 		} else {
 			if !Beats(res.BestOpponentLevel, res.OurLevel) {
 				t.Errorf("Simulator says we lost but their %v doesn't beat our %v", res.BestOpponentLevel, res.OurLevel)
+			}
+			if res.PotFractionWon != 0 {
+				t.Errorf("Simulator says we didn't win, but we won chips: %v", res.PotFractionWon)
 			}
 		}
 		if res.OpponentWon {
@@ -205,6 +237,13 @@ func TestSimInternalSanity(t *testing.T) {
 			}
 			if Beats(res.RandomOpponentLevel, res.BestOpponentLevel) {
 				t.Errorf("Simulator says opponent won but random opponent %v beats their %v", res.RandomOpponentLevel, res.BestOpponentLevel)
+			}
+			if math.Abs(res.PotFractionWon-1.0) < 1e-6 {
+				t.Errorf("Simulator says opponent won but we won the whole pot: %v", res.PotFractionWon)
+			}
+		} else {
+			if res.PotFractionWon != 1.0 {
+				t.Errorf("Simulator says we were the sole winner but we didn't win the whole pot: %v", res.PotFractionWon)
 			}
 		}
 	}

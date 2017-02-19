@@ -20,6 +20,7 @@ along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 package poker
 
 import (
+	"math"
 	"testing"
 )
 
@@ -32,6 +33,9 @@ func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
 	}
 	if sim.WinCount < 0 || sim.WinCount > simulations {
 		t.Errorf("Illogical win count %v", sim.WinCount)
+	}
+	if sim.PotsWon > float64(sim.WinCount) || sim.PotsWon < 0 || (sim.WinCount > 0 && math.Abs(sim.PotsWon) < 1e-6) {
+		t.Errorf("Illogical pot win total %v (win count %v)", sim.PotsWon, sim.WinCount)
 	}
 	checkCounts := func(counts []int, shouldSumToSims bool, name string) int {
 		if len(counts) != int(MAX_HANDCLASS) {

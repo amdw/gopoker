@@ -31,6 +31,7 @@ type Simulator struct {
 	JointWinCount          int
 	BestOpponentWinCount   int
 	RandomOpponentWinCount int
+	PotsWon                float64
 
 	OurClassCounts            []int
 	BestOpponentClassCounts   []int
@@ -54,6 +55,7 @@ func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsT
 	s.JointWinCount = 0
 	s.BestOpponentWinCount = 0
 	s.RandomOpponentWinCount = 0
+	s.PotsWon = 0
 
 	s.OurClassCounts = make([]int, MAX_HANDCLASS)
 	s.BestOpponentClassCounts = make([]int, MAX_HANDCLASS)
@@ -96,6 +98,7 @@ func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsT
 			s.RandomOpponentWinCount++
 			s.ClassRandOppWinCounts[res.RandomOpponentLevel.Class]++
 		}
+		s.PotsWon += res.PotFractionWon
 		s.OurClassCounts[res.OurLevel.Class]++
 		s.BestOpponentClassCounts[res.BestOpponentLevel.Class]++
 		s.RandomOpponentClassCounts[res.RandomOpponentLevel.Class]++
