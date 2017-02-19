@@ -189,7 +189,7 @@ func printResultGraphs(w http.ResponseWriter, simulator poker.Simulator, tableCa
 func formatPct(num, denom int) string {
 	result := ""
 	if denom != 0 {
-		result = fmt.Sprintf("%.1f%%", float32(num)*100.0/float32(denom))
+		result = fmt.Sprintf("%.1f%%", float64(num)*100.0/float64(denom))
 	}
 	return result
 }
