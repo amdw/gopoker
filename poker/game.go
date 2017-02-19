@@ -128,7 +128,7 @@ func (p *Pack) Deal(players int) (onTable []Card, playerCards [][]Card) {
 	return onTable, playerCards
 }
 
-// Assess the hand each player holds and returna  sorted list of outcomes
+// Assess the hand each player holds and return a sorted list of outcomes
 // by hand strength (descending) then player number (ascending).
 // Player numbers are in ascending order of playerCards entries, starting with 1.
 func DealOutcomes(onTable []Card, playerCards [][]Card) []PlayerOutcome {
