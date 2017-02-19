@@ -5,6 +5,7 @@ app.controller('simulatorController', function($scope, $window, $sce) {
     $scope.yourCards = initYourCards;
     $scope.tableCards = initTableCards;
     $scope.simulationCount = initSimCount;
+    $scope.potSize = 1000;
 
     $scope.legalRanks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
     $scope.legalSuits = ["C", "D", "H", "S"];
@@ -170,6 +171,17 @@ app.controller('simulatorController', function($scope, $window, $sce) {
     };
     $scope.tableRankButtonClasses = function(rank) {
         return {'active': rank == $scope.tablePendingRank && !$scope.tableCardsFull()};
+    };
+
+    $scope.potOddsMessage = function() {
+        if (potOddsBreakEven == Infinity) {
+            return $sce.trustAsHtml("<b>Any</b> bet size has positive expected value! :)");
+        } else {
+            var maxBetSize = Math.floor(parseInt($scope.potSize) * potOddsBreakEven);
+            return $sce.trustAsHtml("A bet of up to <b>" + maxBetSize.toLocaleString() + "</b>" +
+                                    " (" + Math.round(potOddsBreakEven * 100) + "% of the pot) " +
+                                    "has positive expected value.");
+        }
     };
 
     $scope.rerun = function() {

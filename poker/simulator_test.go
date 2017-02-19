@@ -37,6 +37,10 @@ func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
 	if sim.PotsWon > float64(sim.WinCount) || sim.PotsWon < 0 || (sim.WinCount > 0 && math.Abs(sim.PotsWon) < 1e-6) {
 		t.Errorf("Illogical pot win total %v (win count %v)", sim.PotsWon, sim.WinCount)
 	}
+	betBreakEven := sim.PotOddsBreakEven()
+	if betBreakEven < 0 || math.IsInf(betBreakEven, -1) || math.IsNaN(betBreakEven) {
+		t.Errorf("Illogical pot odds break-even point: %v", betBreakEven)
+	}
 	checkCounts := func(counts []int, shouldSumToSims bool, name string) int {
 		if len(counts) != int(MAX_HANDCLASS) {
 			t.Errorf("Expected %v %v, found %v", MAX_HANDCLASS, name, len(counts))
@@ -117,5 +121,18 @@ func TestPairs(t *testing.T) {
 	for _, pair := range pairs {
 		sim := pair.RunSimulation(players, simCount)
 		assertSimSanity(sim, players, simCount, t)
+	}
+}
+
+func TestPotOdds(t *testing.T) {
+	sim := Simulator{}
+	sim.HandCount = 10000
+	tests := map[float64]float64{0.0: 0.0, float64(sim.HandCount) / 2.0: 1.0, float64(sim.HandCount): math.Inf(1)}
+	for potsWon, expected := range tests {
+		sim.PotsWon = potsWon
+		breakEven := sim.PotOddsBreakEven()
+		if breakEven != expected {
+			t.Errorf("Expected pot odds break even %v, found %v", expected, breakEven)
+		}
 	}
 }

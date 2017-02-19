@@ -22,6 +22,7 @@ package poker
 import (
 	"errors"
 	"fmt"
+	"math"
 )
 
 type Simulator struct {
@@ -116,6 +117,18 @@ func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsT
 			s.ClassBestOppHands[res.BestOpponentLevel.Class] = res.BestOpponentLevel
 		}
 	}
+}
+
+// Calculate the largest bet which would have a positive expected value, relative to the size of the pot.
+func (s *Simulator) PotOddsBreakEven() float64 {
+	// If W is the mean number of pots won, then:
+	// Expected value of bet = W * (size of pot + bet size) - bet size
+	// This is positive iff bet size < size of pot * W / (1 - W)
+	meanPotsWon := s.PotsWon / float64(s.HandCount)
+	if meanPotsWon == 1.0 {
+		return math.Inf(1)
+	}
+	return meanPotsWon / (1 - meanPotsWon)
 }
 
 type StartingPair struct {

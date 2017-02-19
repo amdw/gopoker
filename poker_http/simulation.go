@@ -26,6 +26,7 @@ import (
 	"github.com/amdw/gopoker/poker"
 	"html/template"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"path"
@@ -359,7 +360,22 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 		simulator.SimulateHoldem(tableCards, yourCards, players, handsToPlay)
 
 		fmt.Fprintf(w, "<h2>Results</h2>")
+
+		breakEven := simulator.PotOddsBreakEven()
+		var breakEvenStr string
+		if math.IsInf(breakEven, 1) {
+			breakEvenStr = "Infinity"
+		} else {
+			breakEvenStr = fmt.Sprintf("%v", breakEven)
+		}
+		fmt.Fprintln(w, `<div class="row"><div class="col-xs-12"><div class="form-group"><form>`)
+		fmt.Fprintln(w, `<label for="potsize">Pot size</label>`)
+		fmt.Fprintln(w, `<input id="potsize" type="text" name="potsize" ng-model="potSize" class="form-control"/>`)
+		fmt.Fprintln(w, `<span ng-bind-html="potOddsMessage()"></span>`)
+		fmt.Fprintln(w, `</form></div></div></div>`)
+
 		printResultGraphs(w, simulator, tableCards, yourCards)
+
 		fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
 		printResultTable(w, simulator)
 		fmt.Fprintln(w, `</div></div>`)
@@ -369,6 +385,7 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 		fmt.Fprintf(w, "var initYourCards = %v;\n", cardsJson(yourCards))
 		fmt.Fprintf(w, "var initTableCards = %v;\n", cardsJson(tableCards))
 		fmt.Fprintf(w, "var initSimCount = %v;\n", handsToPlay)
+		fmt.Fprintf(w, "var potOddsBreakEven = %v;\n", breakEvenStr)
 		if !writeStaticFile(jsFile, w) {
 			return
 		}
