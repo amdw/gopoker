@@ -246,5 +246,19 @@ func TestSimInternalSanity(t *testing.T) {
 				t.Errorf("Simulator says we were the sole winner but we didn't win the whole pot: %v", res.PotFractionWon)
 			}
 		}
+		if res.RandomOpponentWon {
+			if !res.OpponentWon {
+				t.Errorf("Simulator says random opponent won (%v) but not best opponent (%v)!", res.RandomOpponentLevel, res.BestOpponentLevel)
+			}
+			if Beats(res.OurLevel, res.RandomOpponentLevel) {
+				t.Errorf("Simulator says random opponent won but our %v beats their %v", res.OurLevel, res.RandomOpponentLevel)
+			}
+			if Beats(res.BestOpponentLevel, res.RandomOpponentLevel) {
+				t.Errorf("Simulator says random opponent won but best opponent %v beats their %v", res.BestOpponentLevel, res.RandomOpponentLevel)
+			}
+			if math.Abs(res.PotFractionWon-1.0) < 1e-6 {
+				t.Errorf("Simulator says random opponent won but we won the whole pot: %v", res.PotFractionWon)
+			}
+		}
 	}
 }

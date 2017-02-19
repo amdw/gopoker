@@ -94,8 +94,7 @@ func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsT
 			s.JointWinCount++
 			s.ClassJointWinCounts[res.OurLevel.Class]++
 		}
-		if !Beats(res.OurLevel, res.RandomOpponentLevel) && !Beats(res.BestOpponentLevel, res.RandomOpponentLevel) {
-			// The random opponent did at least as well as the winner
+		if res.RandomOpponentWon {
 			s.RandomOpponentWinCount++
 			s.ClassRandOppWinCounts[res.RandomOpponentLevel.Class]++
 		}

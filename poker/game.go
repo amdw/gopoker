@@ -147,7 +147,7 @@ func DealOutcomes(onTable []Card, playerCards [][]Card) []PlayerOutcome {
 }
 
 type SimulationResult struct {
-	Won, OpponentWon                                 bool
+	Won, OpponentWon, RandomOpponentWon              bool
 	PotFractionWon                                   float64
 	OurLevel, BestOpponentLevel, RandomOpponentLevel HandLevel
 }
@@ -176,6 +176,7 @@ func calcSimResult(outcomes []PlayerOutcome, randGen *rand.Rand) SimulationResul
 	opponentWon := !Beats(ourOutcome.Level, opponentOutcomes[0].Level)
 
 	randomOpponentLevel := opponentOutcomes[randGen.Intn(len(opponentOutcomes))].Level
+	randomOpponentWon := !Beats(outcomes[0].Level, randomOpponentLevel)
 
 	var potFractionWon float64
 	if won {
@@ -184,7 +185,8 @@ func calcSimResult(outcomes []PlayerOutcome, randGen *rand.Rand) SimulationResul
 		potFractionWon = 0
 	}
 
-	return SimulationResult{won, opponentWon, potFractionWon, ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel}
+	return SimulationResult{won, opponentWon, randomOpponentWon, potFractionWon,
+		ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel}
 }
 
 // Play out one hand of Texas Hold'em and return whether or not player 1 won,
