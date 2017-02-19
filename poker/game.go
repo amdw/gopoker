@@ -182,10 +182,3 @@ func NewPack() Pack {
 	result.initialise()
 	return result
 }
-
-// Example of a shuffled pack yielding certain cards for you and on the table
-func SamplePack(tableCards, yourCards []Card) Pack {
-	result := NewPack()
-	result.shuffleFixing(tableCards, yourCards)
-	return result
-}
