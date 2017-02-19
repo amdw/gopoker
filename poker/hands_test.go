@@ -21,6 +21,7 @@ package poker
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"testing"
 )
@@ -114,32 +115,13 @@ var classTests = []ClassTest{
 }
 
 func levelsEqual(l1, l2 HandLevel) bool {
-	if l1.Class != l2.Class {
-		return false
-	}
-	if len(l1.Tiebreaks) != len(l2.Tiebreaks) {
-		return false
-	}
-	for i := 0; i < len(l1.Tiebreaks); i++ {
-		if l1.Tiebreaks[i] != l2.Tiebreaks[i] {
-			return false
-		}
-	}
-	return true
+	return reflect.DeepEqual(l1, l2)
 }
 
 func cardsEqual(c1, c2 []Card) bool {
-	if len(c1) != len(c2) {
-		return false
-	}
 	sort.Sort(CardSorter{c1, false})
 	sort.Sort(CardSorter{c2, false})
-	for i := 0; i < len(c1); i++ {
-		if c1[i] != c2[i] {
-			return false
-		}
-	}
-	return true
+	return reflect.DeepEqual(c1, c2)
 }
 
 func TestClassification(t *testing.T) {
