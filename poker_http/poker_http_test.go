@@ -71,8 +71,8 @@ func TestSim(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	urls := []string{
-		fmt.Sprintf("%v/simulate?runsim=false", baseUrl),
-		fmt.Sprintf("%v/simulate?runsim=true", baseUrl),
+		fmt.Sprintf("%v/simulate?compute=false", baseUrl),
+		fmt.Sprintf("%v/simulate?compute=true", baseUrl),
 	}
 	for _, url := range urls {
 		rec := httptest.NewRecorder()

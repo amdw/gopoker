@@ -36,7 +36,7 @@ import (
 const yourCardsKey = "yours"
 const tableCardsKey = "table"
 const simCountKey = "simcount"
-const forceSimKey = "runsim"
+const forceComputeKey = "compute"
 
 func summariseCards(cards []poker.Card) string {
 	if len(cards) == 0 {
@@ -62,14 +62,14 @@ func duplicateCheck(tableCards, yourCards []poker.Card) (ok bool, dupeCard poker
 type simulationParams struct {
 	tableCards, yourCards []poker.Card
 	handsToPlay           int
-	forceSimulation       bool
+	forceComputation      bool
 }
 
 func getSimulationParams(req *http.Request) (params simulationParams, err error) {
 	params = simulationParams{[]poker.Card{}, []poker.Card{}, 10000, false}
 
-	if forceSimStrs, ok := req.Form[forceSimKey]; ok && len(forceSimStrs) == 1 && strings.EqualFold(forceSimStrs[0], "true") {
-		params.forceSimulation = true
+	if forceStrs, ok := req.Form[forceComputeKey]; ok && len(forceStrs) == 1 && strings.EqualFold(forceStrs[0], "true") {
+		params.forceComputation = true
 	}
 
 	extractCards := func(key string) ([]poker.Card, error) {
@@ -363,7 +363,7 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 
 		breakEvenStr := "undefined"
 
-		if len(params.tableCards) > 0 || len(params.yourCards) > 0 || params.forceSimulation {
+		if len(params.tableCards) > 0 || len(params.yourCards) > 0 || params.forceComputation {
 			simulator := &poker.Simulator{}
 			simulator.SimulateHoldem(params.tableCards, params.yourCards, players, params.handsToPlay)
 

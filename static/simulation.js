@@ -184,7 +184,7 @@ app.controller('simulatorController', function($scope, $window, $sce) {
         }
     };
 
-    $scope.rerun = function() {
+    $scope.compute = function() {
         var parts = ["players=" + $scope.playerCount];
         if ($scope.yourCards.length > 0) {
             parts.push("yours=" + $scope.yourCardsUri());
@@ -193,7 +193,7 @@ app.controller('simulatorController', function($scope, $window, $sce) {
             parts.push("table=" + $scope.tableCardsUri());
         }
         parts.push("simcount=" + $scope.simulationCount);
-        parts.push("runsim=true");
+        parts.push("compute=true");
         $window.location.href = "/simulate?" + parts.join("&");
     };
 });
