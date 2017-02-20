@@ -46,11 +46,6 @@ func TestGame(t *testing.T) {
 }
 
 func TestSim(t *testing.T) {
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", fmt.Sprintf("%v/simulate", baseUrl), nil)
-	if err != nil {
-		t.Fatalf("Could not generate HTTP request: %v", err)
-	}
 	// Create temp dir to hold the static assets
 	dir, err := ioutil.TempDir("", "gopokersimulatorstatic")
 	if err != nil {
@@ -58,6 +53,7 @@ func TestSim(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 	t.Log("Created temp dir", dir)
+
 	filenames := []string{"simulation_head.html", "simulation_foot.html", "simulation.js"}
 	for _, filename := range filenames {
 		path := path.Join(dir, filename)
@@ -66,9 +62,21 @@ func TestSim(t *testing.T) {
 			t.Fatalf("Could not write temp file %v: %v", path, err)
 		}
 	}
-	SimulateHoldem(dir)(rec, req)
-	if rec.Code != 200 {
-		t.Errorf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
+
+	urls := []string{
+		fmt.Sprintf("%v/simulate?runsim=false", baseUrl),
+		fmt.Sprintf("%v/simulate?runsim=true", baseUrl),
+	}
+	for _, url := range urls {
+		rec := httptest.NewRecorder()
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			t.Fatalf("Could not generate HTTP request: %v", err)
+		}
+		SimulateHoldem(dir)(rec, req)
+		if rec.Code != 200 {
+			t.Errorf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
+		}
 	}
 }
 

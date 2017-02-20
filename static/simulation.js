@@ -193,6 +193,7 @@ app.controller('simulatorController', function($scope, $window, $sce) {
             parts.push("table=" + $scope.tableCardsUri());
         }
         parts.push("simcount=" + $scope.simulationCount);
+        parts.push("runsim=true");
         $window.location.href = "/simulate?" + parts.join("&");
     };
 });

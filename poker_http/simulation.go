@@ -37,6 +37,7 @@ import (
 const yourCardsKey = "yours"
 const tableCardsKey = "table"
 const simCountKey = "simcount"
+const forceSimKey = "runsim"
 
 func summariseCards(cards []poker.Card) string {
 	if len(cards) == 0 {
@@ -59,10 +60,18 @@ func duplicateCheck(tableCards, yourCards []poker.Card) (ok bool, dupeCard poker
 	return true, poker.Card{}
 }
 
-func simulationParams(req *http.Request) (tableCards, yourCards []poker.Card, handsToPlay int, err error) {
-	yourCards = []poker.Card{}
-	tableCards = []poker.Card{}
-	handsToPlay = 10000
+type simulationParams struct {
+	tableCards, yourCards []poker.Card
+	handsToPlay           int
+	forceSimulation       bool
+}
+
+func getSimulationParams(req *http.Request) (params simulationParams, err error) {
+	params = simulationParams{[]poker.Card{}, []poker.Card{}, 10000, false}
+
+	if forceSimStrs, ok := req.Form[forceSimKey]; ok && len(forceSimStrs) == 1 && strings.EqualFold(forceSimStrs[0], "true") {
+		params.forceSimulation = true
+	}
 
 	extractCards := func(key string) ([]poker.Card, error) {
 		cards := []poker.Card{}
@@ -79,34 +88,34 @@ func simulationParams(req *http.Request) (tableCards, yourCards []poker.Card, ha
 		}
 		return cards, nil
 	}
-	yourCards, err = extractCards(yourCardsKey)
+	params.yourCards, err = extractCards(yourCardsKey)
 	if err != nil {
-		return tableCards, yourCards, handsToPlay, err
+		return params, err
 	}
-	if len(yourCards) > 2 {
-		return tableCards, yourCards, handsToPlay, errors.New(fmt.Sprintf("Maximum of 2 player cards allowed, found %v", len(yourCards)))
+	if len(params.yourCards) > 2 {
+		return params, errors.New(fmt.Sprintf("Maximum of 2 player cards allowed, found %v", len(params.yourCards)))
 	}
-	tableCards, err = extractCards(tableCardsKey)
+	params.tableCards, err = extractCards(tableCardsKey)
 	if err != nil {
-		return tableCards, yourCards, handsToPlay, err
+		return params, err
 	}
-	if len(tableCards) > 5 {
-		return tableCards, yourCards, handsToPlay, errors.New(fmt.Sprintf("Maximum of 5 table cards allowed, found %v", len(tableCards)))
+	if len(params.tableCards) > 5 {
+		return params, errors.New(fmt.Sprintf("Maximum of 5 table cards allowed, found %v", len(params.tableCards)))
 	}
 	// Check for duplicate cards
-	if ok, dupeCard := duplicateCheck(tableCards, yourCards); !ok {
-		return tableCards, yourCards, handsToPlay, errors.New(fmt.Sprintf("Found duplicate card %v in specification", dupeCard))
+	if ok, dupeCard := duplicateCheck(params.tableCards, params.yourCards); !ok {
+		return params, errors.New(fmt.Sprintf("Found duplicate card %v in specification", dupeCard))
 	}
 
 	if handsToPlayStrs, ok := req.Form[simCountKey]; ok && len(handsToPlayStrs) > 0 {
 		handsToPlayParsed, err := strconv.ParseInt(handsToPlayStrs[0], 10, 32)
 		if err != nil {
-			return tableCards, yourCards, handsToPlay, errors.New(fmt.Sprintf("Could not parse simcount: %v", err.Error()))
+			return params, errors.New(fmt.Sprintf("Could not parse simcount: %v", err.Error()))
 		}
-		handsToPlay = int(handsToPlayParsed)
+		params.handsToPlay = int(handsToPlayParsed)
 	}
 
-	return tableCards, yourCards, handsToPlay, nil
+	return params, nil
 }
 
 func printResultGraph(w http.ResponseWriter, title string, handNames []string, series []map[string]interface{}, id string) {
@@ -171,7 +180,7 @@ func makeBestOppSeries(simulator *poker.Simulator) []map[string]interface{} {
 	return series
 }
 
-func printResultGraphs(w http.ResponseWriter, simulator *poker.Simulator, tableCards, yourCards []poker.Card) {
+func printResultGraphs(w http.ResponseWriter, simulator *poker.Simulator) {
 	fmt.Fprintln(w, `<div class="row">`)
 
 	fmt.Fprintln(w, `<div class="col-md-6">`)
@@ -345,7 +354,7 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 			return
 		}
 
-		tableCards, yourCards, handsToPlay, err := simulationParams(req)
+		params, err := getSimulationParams(req)
 		if err != nil {
 			t := template.Must(template.New("error").Parse("<p>Could not get simulation parameters: {{.}}</p></div></body></html>"))
 			t.Execute(w, err.Error())
@@ -356,36 +365,40 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 			return
 		}
 
-		simulator := &poker.Simulator{}
-		simulator.SimulateHoldem(tableCards, yourCards, players, handsToPlay)
+		breakEvenStr := "undefined"
 
-		fmt.Fprintf(w, "<h2>Results</h2>")
+		if len(params.tableCards) > 0 || len(params.yourCards) > 0 || params.forceSimulation {
+			simulator := &poker.Simulator{}
+			simulator.SimulateHoldem(params.tableCards, params.yourCards, players, params.handsToPlay)
 
-		breakEven := simulator.PotOddsBreakEven()
-		var breakEvenStr string
-		if math.IsInf(breakEven, 1) {
-			breakEvenStr = "Infinity"
-		} else {
-			breakEvenStr = fmt.Sprintf("%v", breakEven)
+			fmt.Fprintf(w, "<h2>Results</h2>")
+
+			breakEven := simulator.PotOddsBreakEven()
+			if math.IsInf(breakEven, 1) {
+				breakEvenStr = "Infinity"
+			} else {
+				breakEvenStr = fmt.Sprintf("%v", breakEven)
+			}
+			fmt.Fprintln(w, `<div class="row"><div class="col-xs-12"><div class="form-group"><form>`)
+			fmt.Fprintln(w, `<label for="potsize">Pot size</label>`)
+			fmt.Fprintln(w, `<input id="potsize" type="text" name="potsize" ng-model="potSize" class="form-control"/>`)
+			fmt.Fprintln(w, `<span ng-bind-html="potOddsMessage()"></span>`)
+			fmt.Fprintln(w, `</form></div></div></div>`)
+
+			printResultGraphs(w, simulator)
+
+			fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
+			printResultTable(w, simulator)
+			fmt.Fprintln(w, `</div></div>`)
 		}
-		fmt.Fprintln(w, `<div class="row"><div class="col-xs-12"><div class="form-group"><form>`)
-		fmt.Fprintln(w, `<label for="potsize">Pot size</label>`)
-		fmt.Fprintln(w, `<input id="potsize" type="text" name="potsize" ng-model="potSize" class="form-control"/>`)
-		fmt.Fprintln(w, `<span ng-bind-html="potOddsMessage()"></span>`)
-		fmt.Fprintln(w, `</form></div></div></div>`)
-
-		printResultGraphs(w, simulator, tableCards, yourCards)
-
-		fmt.Fprintln(w, `<div class="row"><div class="col-xs-12">`)
-		printResultTable(w, simulator)
-		fmt.Fprintln(w, `</div></div>`)
 
 		fmt.Fprintln(w, "<script>")
 		fmt.Fprintf(w, "var initPlayerCount = %v;\n", players)
-		fmt.Fprintf(w, "var initYourCards = %v;\n", cardsJson(yourCards))
-		fmt.Fprintf(w, "var initTableCards = %v;\n", cardsJson(tableCards))
-		fmt.Fprintf(w, "var initSimCount = %v;\n", handsToPlay)
+		fmt.Fprintf(w, "var initYourCards = %v;\n", cardsJson(params.yourCards))
+		fmt.Fprintf(w, "var initTableCards = %v;\n", cardsJson(params.tableCards))
+		fmt.Fprintf(w, "var initSimCount = %v;\n", params.handsToPlay)
 		fmt.Fprintf(w, "var potOddsBreakEven = %v;\n", breakEvenStr)
+
 		if !writeStaticFile(jsFile, w) {
 			return
 		}
