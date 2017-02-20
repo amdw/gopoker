@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/amdw/gopoker/poker"
-	"html/template"
 	"io"
 	"math"
 	"net/http"
@@ -348,16 +347,13 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 
 		players, err := getPlayers(req)
 		if err != nil {
-			// Use a template for security as error messages will often contain raw user input
-			t := template.Must(template.New("error").Parse("<p>Could not get player count: {{.}}</p></div></body></html>"))
-			t.Execute(w, err.Error())
+			http.Error(w, fmt.Sprintf("Could not get player count: %v", err), http.StatusBadRequest)
 			return
 		}
 
 		params, err := getSimulationParams(req)
 		if err != nil {
-			t := template.Must(template.New("error").Parse("<p>Could not get simulation parameters: {{.}}</p></div></body></html>"))
-			t.Execute(w, err.Error())
+			http.Error(w, fmt.Sprintf("Could not get simulation parameters: %v", err), http.StatusBadRequest)
 			return
 		}
 

@@ -26,8 +26,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -45,23 +47,28 @@ func TestGame(t *testing.T) {
 	}
 }
 
-func TestSim(t *testing.T) {
-	// Create temp dir to hold the static assets
+func setupSimStaticAssets(t *testing.T) string {
 	dir, err := ioutil.TempDir("", "gopokersimulatorstatic")
 	if err != nil {
 		t.Fatalf("Could not create temp dir for static assets: %v", err)
 	}
-	defer os.RemoveAll(dir)
 	t.Log("Created temp dir", dir)
 
 	filenames := []string{"simulation_head.html", "simulation_foot.html", "simulation.js"}
 	for _, filename := range filenames {
 		path := path.Join(dir, filename)
-		err = ioutil.WriteFile(path, []byte(filename), 0644)
+		err := ioutil.WriteFile(path, []byte(filename), 0644)
 		if err != nil {
 			t.Fatalf("Could not write temp file %v: %v", path, err)
 		}
 	}
+
+	return dir
+}
+
+func TestSim(t *testing.T) {
+	dir := setupSimStaticAssets(t)
+	defer os.RemoveAll(dir)
 
 	urls := []string{
 		fmt.Sprintf("%v/simulate?runsim=false", baseUrl),
@@ -76,6 +83,39 @@ func TestSim(t *testing.T) {
 		SimulateHoldem(dir)(rec, req)
 		if rec.Code != 200 {
 			t.Errorf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
+		}
+	}
+}
+
+func TestSimInputValidation(t *testing.T) {
+	dir := setupSimStaticAssets(t)
+	defer os.RemoveAll(dir)
+
+	tooManyTableCards := "yours=" + url.QueryEscape("AS,QD") + "&table=" + url.QueryEscape("2S,3S,4S,5S,6S,7S")
+	duplicateCard := "yours=" + url.QueryEscape("AS,QD") + "&table=" + url.QueryEscape("QD,2S,3S")
+	tests := map[string]string{
+		"players=wibble":                          "Could not get player count",
+		"yours=" + url.QueryEscape("AS,QZ"):       "Illegally formatted card \"QZ\"",
+		"table=" + url.QueryEscape("2D,3S,QZ,AD"): "Illegally formatted card \"QZ\"",
+		"yours=" + url.QueryEscape("AS,QD,3S"):    "Maximum of 2 player cards allowed, found 3",
+		tooManyTableCards:                         "Maximum of 5 table cards allowed, found 6",
+		duplicateCard:                             "Found duplicate card QD",
+		"simcount=wibble":                         "Could not parse simcount",
+	}
+
+	for query, expectedError := range tests {
+		rec := httptest.NewRecorder()
+		url := fmt.Sprintf("%v/simulate?%v", baseUrl, query)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			t.Fatalf("Could not generate HTTP request: %v", err)
+		}
+		SimulateHoldem(dir)(rec, req)
+		if rec.Code != 400 {
+			t.Errorf("Got HTTP code %v for %v, expected 400: %v", rec.Code, url, rec.Body.String())
+		}
+		if !strings.Contains(rec.Body.String(), expectedError) {
+			t.Errorf("Could not find expected error '%v' in response for %v: %v", expectedError, url, rec.Body.String())
 		}
 	}
 }
