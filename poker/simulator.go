@@ -49,7 +49,7 @@ type Simulator struct {
 	ClassBestOppHands []HandLevel
 }
 
-func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsToPlay int) {
+func (s *Simulator) reset(players, handsToPlay int) {
 	s.Players = players
 	s.HandCount = handsToPlay
 	s.WinCount = 0
@@ -77,44 +77,51 @@ func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsT
 	for i := range s.ClassBestOppHands {
 		s.ClassBestOppHands[i] = MinLevel()
 	}
+}
 
+func (s *Simulator) processHand(outcome HandOutcome) {
+	if outcome.Won {
+		s.WinCount++
+		s.ClassWinCounts[outcome.OurLevel.Class]++
+	}
+	if outcome.OpponentWon {
+		s.BestOpponentWinCount++
+		s.ClassBestOppWinCounts[outcome.BestOpponentLevel.Class]++
+	}
+	if outcome.Won && outcome.OpponentWon {
+		s.JointWinCount++
+		s.ClassJointWinCounts[outcome.OurLevel.Class]++
+	}
+	if outcome.RandomOpponentWon {
+		s.RandomOpponentWinCount++
+		s.ClassRandOppWinCounts[outcome.RandomOpponentLevel.Class]++
+	}
+	s.PotsWon += outcome.PotFractionWon
+	s.OurClassCounts[outcome.OurLevel.Class]++
+	s.BestOpponentClassCounts[outcome.BestOpponentLevel.Class]++
+	s.RandomOpponentClassCounts[outcome.RandomOpponentLevel.Class]++
+
+	if Beats(outcome.OurLevel, s.BestHand) {
+		s.BestHand = outcome.OurLevel
+	}
+	if Beats(outcome.BestOpponentLevel, s.BestOppHand) {
+		s.BestOppHand = outcome.BestOpponentLevel
+	}
+	if Beats(outcome.OurLevel, s.ClassBestHands[outcome.OurLevel.Class]) {
+		s.ClassBestHands[outcome.OurLevel.Class] = outcome.OurLevel
+	}
+	if Beats(outcome.BestOpponentLevel, s.ClassBestOppHands[outcome.BestOpponentLevel.Class]) {
+		s.ClassBestOppHands[outcome.BestOpponentLevel.Class] = outcome.BestOpponentLevel
+	}
+}
+
+func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsToPlay int) {
+	s.reset(players, handsToPlay)
 	p := NewPack()
 	for i := 0; i < handsToPlay; i++ {
 		p.shuffleFixing(tableCards, yourCards)
 		res := p.SimulateOneHoldemHand(players)
-		if res.Won {
-			s.WinCount++
-			s.ClassWinCounts[res.OurLevel.Class]++
-		}
-		if res.OpponentWon {
-			s.BestOpponentWinCount++
-			s.ClassBestOppWinCounts[res.BestOpponentLevel.Class]++
-		}
-		if res.Won && res.OpponentWon {
-			s.JointWinCount++
-			s.ClassJointWinCounts[res.OurLevel.Class]++
-		}
-		if res.RandomOpponentWon {
-			s.RandomOpponentWinCount++
-			s.ClassRandOppWinCounts[res.RandomOpponentLevel.Class]++
-		}
-		s.PotsWon += res.PotFractionWon
-		s.OurClassCounts[res.OurLevel.Class]++
-		s.BestOpponentClassCounts[res.BestOpponentLevel.Class]++
-		s.RandomOpponentClassCounts[res.RandomOpponentLevel.Class]++
-
-		if Beats(res.OurLevel, s.BestHand) {
-			s.BestHand = res.OurLevel
-		}
-		if Beats(res.BestOpponentLevel, s.BestOppHand) {
-			s.BestOppHand = res.BestOpponentLevel
-		}
-		if Beats(res.OurLevel, s.ClassBestHands[res.OurLevel.Class]) {
-			s.ClassBestHands[res.OurLevel.Class] = res.OurLevel
-		}
-		if Beats(res.BestOpponentLevel, s.ClassBestOppHands[res.BestOpponentLevel.Class]) {
-			s.ClassBestOppHands[res.BestOpponentLevel.Class] = res.BestOpponentLevel
-		}
+		s.processHand(res)
 	}
 }
 

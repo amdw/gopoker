@@ -190,7 +190,7 @@ func TestSharedPot(t *testing.T) {
 			loseOutcome.Player = i + 1
 			outcomes[i] = loseOutcome
 		}
-		res := calcSimResult(outcomes, rng)
+		res := calcHandOutcome(outcomes, rng)
 		expectedWin := 1.0 / float64(split)
 		if math.Abs(res.PotFractionWon-expectedWin) > 1e-6 {
 			t.Errorf("Expected %v-way split to win %v of pot, found %v", split, expectedWin, res.PotFractionWon)
