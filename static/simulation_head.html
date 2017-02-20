@@ -44,7 +44,7 @@ td.zero { color: lightgrey }
 <button ng-repeat="suit in legalSuits" type="button" class="btn btn-default" ng-click="setYourPendingSuit(suit)" ng-class="yourSuitButtonClasses(suit)" ng-disabled="yourCardsFull()"><span ng-bind-html="displaySuit(suit)"></span></button>
 <button ng-repeat="rank in legalRanks" type="button" class="btn btn-default" ng-click="setYourPendingRank(rank)" ng-class="yourRankButtonClasses(rank)" ng-disabled="yourCardsFull()">{{rank}}</button>
 <br/>
-<button type="button" class="btn btn-default" ng-click="yourCardsRandom()">Random</button>
+<button type="button" class="btn btn-default" ng-click="yourCardsRandom()" ng-disabled="yourCardsFull()">Random</button>
 <button ng-click="rerun()" class="btn btn-primary">Rerun</button>
 </div>
 
