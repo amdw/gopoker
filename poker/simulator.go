@@ -23,6 +23,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
+	"time"
 )
 
 type Simulator struct {
@@ -116,12 +118,52 @@ func (s *Simulator) processHand(outcome HandOutcome) {
 }
 
 func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsToPlay int) {
+	// Very crude attempt to detect situation where exhaustive enumeration is cheaper than simulation
+	if len(tableCards) == 5 && len(yourCards) == 2 && players == 2 && handsToPlay > 990 {
+		s.enumerateHoldem(tableCards, yourCards, players)
+		return
+	}
 	s.reset(players, handsToPlay)
 	p := NewPack()
 	for i := 0; i < handsToPlay; i++ {
 		p.shuffleFixing(tableCards, yourCards)
-		res := p.SimulateOneHoldemHand(players)
-		s.processHand(res)
+		handOutcome := p.SimulateOneHoldemHand(players)
+		s.processHand(handOutcome)
+	}
+}
+
+func (s *Simulator) enumerateHoldem(tableCards, yourCards []Card, players int) {
+	s.reset(players, 0)
+	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+	// For now we only enumerate the case where we have only one opponent and a full set of table cards.
+	remainingPack := make([]Card, 45)
+	i := 0
+	isUsed := func(card Card) bool {
+		for _, c := range tableCards {
+			if c == card {
+				return true
+			}
+		}
+		for _, c := range yourCards {
+			if c == card {
+				return true
+			}
+		}
+		return false
+	}
+	for _, card := range NewPack().Cards {
+		if !isUsed(card) {
+			remainingPack[i] = card
+			i++
+		}
+	}
+	opponentHands := allCardCombinations(remainingPack, 2)
+	for _, opponentHand := range opponentHands {
+		playerCards := [][]Card{yourCards, opponentHand}
+		outcomes := DealOutcomes(tableCards, playerCards)
+		handOutcome := calcHandOutcome(outcomes, randGen)
+		s.processHand(handOutcome)
+		s.HandCount++
 	}
 }
 
