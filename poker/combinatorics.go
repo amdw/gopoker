@@ -19,26 +19,66 @@ along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 */
 package poker
 
+// Reimplement some simple mathematical functions here to avoid float64 or big.Int conversions
+func min(x, y int) int {
+	if x < y {
+		return x
+	} else {
+		return y
+	}
+}
+
+func max(x, y int) int {
+	if x > y {
+		return x
+	} else {
+		return y
+	}
+}
+
+func binomial(n, r int) int {
+	result := 1
+	for i := n; i > max(r, n-r); i-- {
+		result *= i
+	}
+	for i := min(r, n-r); i > 1; i-- {
+		result /= i
+	}
+	return result
+}
+
 // Compute all unique subsets of a set of cards, of a given size.
 func allCardCombinations(pack []Card, numRequired int) [][]Card {
-	// N choose 0 = 1 regardless of N/K
-	if numRequired == 0 {
-		return [][]Card{[]Card{}}
+	result := make([][]Card, 0, binomial(len(pack), numRequired))
+	indices := make([]int, numRequired)
+	// Standard algorithm to enumerate k-combinations
+	for i := 0; i < numRequired; i++ {
+		indices[i] = i
 	}
-	// N choose N = 1 regardless of N
-	if numRequired == len(pack) {
-		return [][]Card{pack}
+	for {
+		// Construct a combination
+		combination := make([]Card, numRequired)
+		for i := 0; i < numRequired; i++ {
+			combination[i] = pack[indices[i]]
+		}
+		result = append(result, combination)
+
+		// Advance to the next combination
+		if indices[numRequired-1] < len(pack)-1 {
+			indices[numRequired-1]++
+		} else {
+			i := numRequired - 1
+			for i >= 0 && indices[i] == i+len(pack)-numRequired {
+				i--
+			}
+			if i < 0 {
+				break
+			}
+			indices[i]++
+			for j := i + 1; j < numRequired; j++ {
+				indices[j] = indices[j-1] + 1
+			}
+		}
 	}
-	// N choose K = N-1 choose K + N-1 choose K-1
-	withoutFirst := allCardCombinations(pack[1:], numRequired)
-	smallerWithoutFirst := allCardCombinations(pack[1:], numRequired-1)
-	result := make([][]Card, len(withoutFirst)+len(smallerWithoutFirst))
-	for i, sub := range smallerWithoutFirst {
-		subset := make([]Card, len(sub)+1)
-		subset[0] = pack[0]
-		copy(subset[1:], sub)
-		result[i] = subset
-	}
-	copy(result[len(smallerWithoutFirst):], withoutFirst)
 	return result
 }

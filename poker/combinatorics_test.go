@@ -39,6 +39,32 @@ func lexSortHands(hands [][]Card) {
 	})
 }
 
+type binomTestCase struct {
+	n, r, expected int
+}
+
+func TestBinomial(t *testing.T) {
+	cases := []binomTestCase{
+		binomTestCase{3, 0, 1},
+		binomTestCase{3, 1, 3},
+		binomTestCase{3, 2, 3},
+		binomTestCase{3, 3, 1},
+		binomTestCase{4, 0, 1},
+		binomTestCase{4, 1, 4},
+		binomTestCase{4, 2, 6},
+		binomTestCase{4, 3, 4},
+		binomTestCase{4, 4, 1},
+		binomTestCase{45, 2, 990},
+	}
+
+	for _, test := range cases {
+		actual := binomial(test.n, test.r)
+		if actual != test.expected {
+			t.Errorf("Expected binomial(%v, %v) = %v, found %v", test.n, test.r, test.expected, actual)
+		}
+	}
+}
+
 func TestCardCombinations(t *testing.T) {
 	cards := h("AS", "QD", "JC", "3C", "2H")
 
