@@ -19,38 +19,26 @@ along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 */
 package poker
 
-// A sub-function with an extra argument startSkippingAt to avoid duplication of results
-func allCombinationsSkipping(cards []Card, num, startSkippingAt int) [][]Card {
-	if num >= len(cards) {
-		return [][]Card{cards}
+// Compute all unique subsets of a set of cards, of a given size.
+func allCardCombinations(pack []Card, numRequired int) [][]Card {
+	// N choose 0 = 1 regardless of N/K
+	if numRequired == 0 {
+		return [][]Card{[]Card{}}
 	}
-
-	result := [][]Card{}
-
-	// Call the function recursively with every possible one-smaller combination, starting skipping at the appropriate location.
-	for i := startSkippingAt; i < len(cards); i++ {
-		nextSmaller := make([]Card, len(cards)-1)
-		j := 0
-		for k, c := range cards {
-			if k == i {
-				continue
-			}
-			nextSmaller[j] = c
-			j++
-		}
-		subChoices := allCombinationsSkipping(nextSmaller, num, i)
-		if len(subChoices) > 0 {
-			newResult := make([][]Card, len(result)+len(subChoices))
-			copy(newResult[0:len(result)], result)
-			copy(newResult[len(result):], subChoices)
-			result = newResult
-		}
+	// N choose N = 1 regardless of N
+	if numRequired == len(pack) {
+		return [][]Card{pack}
 	}
-
+	// N choose K = N-1 choose K + N-1 choose K-1
+	withoutFirst := allCardCombinations(pack[1:], numRequired)
+	smallerWithoutFirst := allCardCombinations(pack[1:], numRequired-1)
+	result := make([][]Card, len(withoutFirst)+len(smallerWithoutFirst))
+	for i, sub := range smallerWithoutFirst {
+		subset := make([]Card, len(sub)+1)
+		subset[0] = pack[0]
+		copy(subset[1:], sub)
+		result[i] = subset
+	}
+	copy(result[len(smallerWithoutFirst):], withoutFirst)
 	return result
-}
-
-// All ways to choose n cards from a set
-func allCardCombinations(cards []Card, num int) [][]Card {
-	return allCombinationsSkipping(cards, num, 0)
 }
