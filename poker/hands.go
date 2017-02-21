@@ -581,42 +581,6 @@ func classifyHand(cards []Card) HandLevel {
 	return classifyHighCard(cards)
 }
 
-// A sub-function with an extra argument startSkippingAt to avoid duplication of results
-func allChoicesSkipping(cards []Card, num, startSkippingAt int) [][]Card {
-	if num >= len(cards) {
-		return [][]Card{cards}
-	}
-
-	result := [][]Card{}
-
-	// Call the function recursively with every possible one-smaller combination, starting skipping at the appropriate location.
-	for i := startSkippingAt; i < len(cards); i++ {
-		nextSmaller := make([]Card, len(cards)-1)
-		j := 0
-		for k, c := range cards {
-			if k == i {
-				continue
-			}
-			nextSmaller[j] = c
-			j++
-		}
-		subChoices := allChoicesSkipping(nextSmaller, num, i)
-		if len(subChoices) > 0 {
-			newResult := make([][]Card, len(result)+len(subChoices))
-			copy(newResult[0:len(result)], result)
-			copy(newResult[len(result):], subChoices)
-			result = newResult
-		}
-	}
-
-	return result
-}
-
-// All ways to choose n cards from a set
-func allChoices(cards []Card, num int) [][]Card {
-	return allChoicesSkipping(cards, num, 0)
-}
-
 // Classifies the best poker hand which can be built from a set of at least 5 cards.
 func Classify(optional []Card) (HandLevel, []Card) {
 	// Construct all possible hands and find the best one

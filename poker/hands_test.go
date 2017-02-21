@@ -21,7 +21,6 @@ package poker
 
 import (
 	"fmt"
-	"sort"
 	"testing"
 )
 
@@ -98,58 +97,6 @@ func TestSorting(t *testing.T) {
 	for i, c := range h("QD", "JC", "10C", "4S", "3C", "AS") {
 		if cards[i] != c {
 			t.Errorf("Expected %v at position %v of ace-low list, found %v", c, i, cards[i])
-		}
-	}
-}
-
-func lexSortHands(hands [][]Card) {
-	sort.Slice(hands, func(i, j int) bool {
-		for k := 0; k < len(hands[i]) && k < len(hands[j]); k++ {
-			c1, c2 := hands[i][k], hands[j][k]
-			if c1 != c2 {
-				if c1.Rank != c2.Rank {
-					return c1.Rank < c2.Rank
-				}
-				return c1.Suit < c2.Suit
-			}
-		}
-		return false
-	})
-}
-
-func TestAllChoices(t *testing.T) {
-	cards := h("AS", "QD", "JC", "3C", "2H")
-
-	expectedChoices := [][]Card{
-		h("AS", "QD", "JC"),
-		h("AS", "QD", "3C"),
-		h("AS", "JC", "3C"),
-		h("QD", "JC", "3C"),
-		h("AS", "QD", "2H"),
-		h("AS", "JC", "2H"),
-		h("QD", "JC", "2H"),
-		h("AS", "3C", "2H"),
-		h("QD", "3C", "2H"),
-		h("JC", "3C", "2H"),
-	}
-	lexSortHands(expectedChoices)
-
-	choices := allChoices(cards, 3)
-	lexSortHands(choices)
-
-	if len(choices) != len(expectedChoices) {
-		t.Errorf("Expected %v choices, found %v: %v / %v", len(expectedChoices), len(choices), expectedChoices, choices)
-	}
-
-	for i := range choices {
-		if len(expectedChoices[i]) != len(choices[i]) {
-			t.Errorf("Expected %v at choices[%v], found %v", expectedChoices[i], i, choices[i])
-		}
-		for j := range expectedChoices[i] {
-			if expectedChoices[i][j] != choices[i][j] {
-				t.Errorf("Expected %v at choices[%v], found %v", expectedChoices[i], i, choices[i])
-				break
-			}
 		}
 	}
 }
