@@ -129,7 +129,7 @@ func DealOutcomes(onTable []Card, playerCards [][]Card) []PlayerOutcome {
 		combinedCards := make([]Card, 7)
 		copy(combinedCards[0:5], onTable)
 		copy(combinedCards[5:7], hand)
-		level, cards := Classify([]Card{}, combinedCards)
+		level, cards := Classify(combinedCards)
 		outcomes[playerIdx] = PlayerOutcome{playerIdx + 1, level, cards}
 	}
 	sortHands(outcomes)

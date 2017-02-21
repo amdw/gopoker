@@ -617,25 +617,10 @@ func allChoices(cards []Card, num int) [][]Card {
 	return allChoicesSkipping(cards, num, 0)
 }
 
-// Classifies a poker hand composed of some mandatory cards (which MUST be in the constructed hand)
-// and some optional cards (which MAY be used to construct the hand).
-func Classify(mandatory, optional []Card) (HandLevel, []Card) {
+// Classifies the best poker hand which can be built from a set of at least 5 cards.
+func Classify(optional []Card) (HandLevel, []Card) {
 	// Construct all possible hands and find the best one
-	allPossibleOptionals := allChoices(optional, 5-len(mandatory))
-
-	var allPossibleHands [][]Card
-	if len(mandatory) == 0 {
-		// Performance optimisation to avoid copying in this special case
-		allPossibleHands = allPossibleOptionals
-	} else {
-		allPossibleHands = make([][]Card, len(allPossibleOptionals))
-		for i, os := range allPossibleOptionals {
-			hand := make([]Card, 5)
-			copy(hand[0:len(mandatory)], mandatory)
-			copy(hand[len(mandatory):], os)
-			allPossibleHands[i] = hand
-		}
-	}
+	allPossibleHands := allChoices(optional, 5)
 
 	bestHand := allPossibleHands[0]
 	bestRank := classifyHand(bestHand)

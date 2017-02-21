@@ -22,8 +22,19 @@ package poker
 import (
 	"math"
 	"math/rand"
+	"reflect"
 	"testing"
 )
+
+func levelsEqual(l1, l2 HandLevel) bool {
+	return reflect.DeepEqual(l1, l2)
+}
+
+func cardsEqual(c1, c2 []Card) bool {
+	sortCards(c1, false)
+	sortCards(c2, false)
+	return reflect.DeepEqual(c1, c2)
+}
 
 type GameTest struct {
 	HandCards     []Card
