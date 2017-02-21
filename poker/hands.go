@@ -584,7 +584,7 @@ func classifyHand(cards []Card) HandLevel {
 // Classifies the best poker hand which can be built from a set of at least 5 cards.
 func Classify(optional []Card) (HandLevel, []Card) {
 	// Construct all possible hands and find the best one
-	allPossibleHands := allChoices(optional, 5)
+	allPossibleHands := allCardCombinations(optional, 5)
 
 	bestHand := allPossibleHands[0]
 	bestRank := classifyHand(bestHand)

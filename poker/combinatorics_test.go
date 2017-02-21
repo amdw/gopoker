@@ -39,7 +39,7 @@ func lexSortHands(hands [][]Card) {
 	})
 }
 
-func TestAllChoices(t *testing.T) {
+func TestCardCombinations(t *testing.T) {
 	cards := h("AS", "QD", "JC", "3C", "2H")
 
 	expectedChoices := [][]Card{
@@ -56,7 +56,7 @@ func TestAllChoices(t *testing.T) {
 	}
 	lexSortHands(expectedChoices)
 
-	choices := allChoices(cards, 3)
+	choices := allCardCombinations(cards, 3)
 	lexSortHands(choices)
 
 	if len(choices) != len(expectedChoices) {

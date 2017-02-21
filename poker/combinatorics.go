@@ -20,7 +20,7 @@ along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 package poker
 
 // A sub-function with an extra argument startSkippingAt to avoid duplication of results
-func allChoicesSkipping(cards []Card, num, startSkippingAt int) [][]Card {
+func allCombinationsSkipping(cards []Card, num, startSkippingAt int) [][]Card {
 	if num >= len(cards) {
 		return [][]Card{cards}
 	}
@@ -38,7 +38,7 @@ func allChoicesSkipping(cards []Card, num, startSkippingAt int) [][]Card {
 			nextSmaller[j] = c
 			j++
 		}
-		subChoices := allChoicesSkipping(nextSmaller, num, i)
+		subChoices := allCombinationsSkipping(nextSmaller, num, i)
 		if len(subChoices) > 0 {
 			newResult := make([][]Card, len(result)+len(subChoices))
 			copy(newResult[0:len(result)], result)
@@ -51,6 +51,6 @@ func allChoicesSkipping(cards []Card, num, startSkippingAt int) [][]Card {
 }
 
 // All ways to choose n cards from a set
-func allChoices(cards []Card, num int) [][]Card {
-	return allChoicesSkipping(cards, num, 0)
+func allCardCombinations(cards []Card, num int) [][]Card {
+	return allCombinationsSkipping(cards, num, 0)
 }
