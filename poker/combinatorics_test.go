@@ -56,7 +56,12 @@ func TestCardCombinations(t *testing.T) {
 	}
 	lexSortHands(expectedChoices)
 
-	choices := allCardCombinations(cards, 3)
+	ch := make(chan []Card)
+	go enumerateCardCombinations(cards, 3, ch)
+	choices := make([][]Card, 0, 10)
+	for choice := range ch {
+		choices = append(choices, choice)
+	}
 	lexSortHands(choices)
 
 	if len(choices) != len(expectedChoices) {

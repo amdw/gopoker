@@ -19,26 +19,40 @@ along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 */
 package poker
 
-// Compute all unique subsets of a set of cards, of a given size.
-func allCardCombinations(pack []Card, numRequired int) [][]Card {
-	// N choose 0 = 1 regardless of N/K
-	if numRequired == 0 {
-		return [][]Card{[]Card{}}
+// Compute each unique subset of a set of cards of a given size, and send it down a channel.
+// This implementation is experimental; one might expect it to perform better than the recursive
+// implementation because of the lack of repeated work and reduced memory allocation, but in fact
+// what we gain in these areas seems to be almost exactly balanced by the cost of semaphore operations.
+func enumerateCardCombinations(pack []Card, numRequired int, c chan []Card) {
+	indices := make([]int, numRequired)
+	// Standard algorithm to enumerate k-combinations
+	for i := 0; i < numRequired; i++ {
+		indices[i] = i
 	}
-	// N choose N = 1 regardless of N
-	if numRequired == len(pack) {
-		return [][]Card{pack}
+	for {
+		// Construct and send a combination
+		combination := make([]Card, numRequired)
+		for i := 0; i < numRequired; i++ {
+			combination[i] = pack[indices[i]]
+		}
+		c <- combination
+
+		// Advance to the next combination
+		if indices[numRequired-1] < len(pack)-1 {
+			indices[numRequired-1]++
+		} else {
+			i := numRequired - 1
+			for i >= 0 && indices[i] == i+len(pack)-numRequired {
+				i--
+			}
+			if i < 0 {
+				close(c)
+				break
+			}
+			indices[i]++
+			for j := i + 1; j < numRequired; j++ {
+				indices[j] = indices[j-1] + 1
+			}
+		}
 	}
-	// N choose K = N-1 choose K + N-1 choose K-1
-	withoutFirst := allCardCombinations(pack[1:], numRequired)
-	smallerWithoutFirst := allCardCombinations(pack[1:], numRequired-1)
-	result := make([][]Card, len(withoutFirst)+len(smallerWithoutFirst))
-	for i, sub := range smallerWithoutFirst {
-		subset := make([]Card, len(sub)+1)
-		subset[0] = pack[0]
-		copy(subset[1:], sub)
-		result[i] = subset
-	}
-	copy(result[len(smallerWithoutFirst):], withoutFirst)
-	return result
 }
