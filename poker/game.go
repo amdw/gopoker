@@ -137,12 +137,21 @@ func DealOutcomes(onTable []Card, playerCards [][]Card) []PlayerOutcome {
 }
 
 type HandOutcome struct {
-	Won, OpponentWon, RandomOpponentWon              bool
-	PotFractionWon                                   float64
-	OurLevel, BestOpponentLevel, RandomOpponentLevel HandLevel
+	Won, OpponentWon, RandomOpponentWon                      bool
+	PotFractionWon                                           float64
+	BestOpponentPotFractionWon, RandomOpponentPotFractionWon float64
+	OurLevel, BestOpponentLevel, RandomOpponentLevel         HandLevel
 }
 
-func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) HandOutcome {
+func calcPotFraction(won bool, potSplit int) float64 {
+	if won {
+		return 1.0 / float64(potSplit)
+	} else {
+		return 0
+	}
+}
+
+func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) *HandOutcome {
 	// This works even if player 1 was equal first, since equal hands are sorted by player
 	won := outcomes[0].Player == 1
 
@@ -163,25 +172,24 @@ func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) HandOutcome {
 		}
 	}
 
-	opponentWon := !Beats(ourOutcome.Level, opponentOutcomes[0].Level)
+	bestOpponentWon := !Beats(ourOutcome.Level, opponentOutcomes[0].Level)
 
-	randomOpponentLevel := opponentOutcomes[randGen.Intn(len(opponentOutcomes))].Level
+	randomOpponentIdx := randGen.Intn(len(opponentOutcomes))
+	randomOpponentLevel := opponentOutcomes[randomOpponentIdx].Level
 	randomOpponentWon := !Beats(outcomes[0].Level, randomOpponentLevel)
 
-	var potFractionWon float64
-	if won {
-		potFractionWon = 1.0 / float64(potSplit)
-	} else {
-		potFractionWon = 0
-	}
+	potFractionWon := calcPotFraction(won, potSplit)
+	bestOpponentPotFraction := calcPotFraction(bestOpponentWon, potSplit)
+	randomOpponentPotFraction := calcPotFraction(randomOpponentWon, potSplit)
 
-	return HandOutcome{won, opponentWon, randomOpponentWon, potFractionWon,
+	return &HandOutcome{won, bestOpponentWon, randomOpponentWon,
+		potFractionWon, bestOpponentPotFraction, randomOpponentPotFraction,
 		ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel}
 }
 
 // Play out one hand of Texas Hold'em and return whether or not player 1 won,
 // plus player 1's hand level, plus the best hand level of any of player 1's opponents.
-func (p *Pack) SimulateOneHoldemHand(players int) HandOutcome {
+func (p *Pack) SimulateOneHoldemHand(players int) *HandOutcome {
 	onTable, playerCards := p.Deal(players)
 	outcomes := DealOutcomes(onTable, playerCards)
 	return calcHandOutcome(outcomes, p.randGen)

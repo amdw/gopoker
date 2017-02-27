@@ -35,6 +35,8 @@ type Simulator struct {
 	BestOpponentWinCount   int
 	RandomOpponentWinCount int
 	PotsWon                float64
+	BestOpponentPotsWon    float64
+	RandomOpponentPotsWon  float64
 
 	OurClassCounts            []int
 	BestOpponentClassCounts   []int
@@ -59,6 +61,8 @@ func (s *Simulator) reset(players, handsToPlay int) {
 	s.BestOpponentWinCount = 0
 	s.RandomOpponentWinCount = 0
 	s.PotsWon = 0
+	s.BestOpponentPotsWon = 0
+	s.RandomOpponentPotsWon = 0
 
 	s.OurClassCounts = make([]int, MAX_HANDCLASS)
 	s.BestOpponentClassCounts = make([]int, MAX_HANDCLASS)
@@ -81,7 +85,7 @@ func (s *Simulator) reset(players, handsToPlay int) {
 	}
 }
 
-func (s *Simulator) processHand(outcome HandOutcome) {
+func (s *Simulator) processHand(outcome *HandOutcome) {
 	if outcome.Won {
 		s.WinCount++
 		s.ClassWinCounts[outcome.OurLevel.Class]++
@@ -99,6 +103,8 @@ func (s *Simulator) processHand(outcome HandOutcome) {
 		s.ClassRandOppWinCounts[outcome.RandomOpponentLevel.Class]++
 	}
 	s.PotsWon += outcome.PotFractionWon
+	s.BestOpponentPotsWon += outcome.BestOpponentPotFractionWon
+	s.RandomOpponentPotsWon += outcome.RandomOpponentPotFractionWon
 	s.OurClassCounts[outcome.OurLevel.Class]++
 	s.BestOpponentClassCounts[outcome.BestOpponentLevel.Class]++
 	s.RandomOpponentClassCounts[outcome.RandomOpponentLevel.Class]++

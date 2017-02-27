@@ -24,6 +24,12 @@ import (
 	"testing"
 )
 
+func assertPotsWonSanity(winCount int, potsWon float64, description string, t *testing.T) {
+	if potsWon > float64(winCount) || potsWon < 0 || (winCount > 0 && math.Abs(potsWon) < 1e-6) {
+		t.Errorf("Illogical pot win total %v for %v (win count %v)", potsWon, description, winCount)
+	}
+}
+
 func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
 	if sim.Players != players {
 		t.Errorf("Expected %v players, found %v", players, sim.Players)
@@ -34,8 +40,11 @@ func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
 	if sim.WinCount < 0 || sim.WinCount > simulations {
 		t.Errorf("Illogical win count %v", sim.WinCount)
 	}
-	if sim.PotsWon > float64(sim.WinCount) || sim.PotsWon < 0 || (sim.WinCount > 0 && math.Abs(sim.PotsWon) < 1e-6) {
-		t.Errorf("Illogical pot win total %v (win count %v)", sim.PotsWon, sim.WinCount)
+	assertPotsWonSanity(sim.WinCount, sim.PotsWon, "us", t)
+	assertPotsWonSanity(sim.BestOpponentWinCount, sim.BestOpponentPotsWon, "best opponent", t)
+	assertPotsWonSanity(sim.RandomOpponentWinCount, sim.RandomOpponentPotsWon, "random opponent", t)
+	if sim.PotsWon+sim.BestOpponentPotsWon > float64(simulations) {
+		t.Errorf("More pots won than there were simulated hands: %v+%v vs %v", sim.PotsWon, sim.BestOpponentPotsWon, simulations)
 	}
 	betBreakEven := sim.PotOddsBreakEven()
 	if betBreakEven < 0 || math.IsInf(betBreakEven, -1) || math.IsNaN(betBreakEven) {
@@ -107,11 +116,27 @@ func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
 }
 
 func TestSimSanity(t *testing.T) {
-	sim := &Simulator{}
+	sim := Simulator{}
 	players := 5
 	simulations := 10000
 	sim.SimulateHoldem([]Card{}, []Card{}, players, simulations)
-	assertSimSanity(sim, players, simulations, t)
+	assertSimSanity(&sim, players, simulations, t)
+}
+
+func TestTwoPlayers(t *testing.T) {
+	sim := Simulator{}
+	simulations := 10000
+	sim.SimulateHoldem([]Card{}, []Card{}, 2, simulations)
+	assertSimSanity(&sim, 2, simulations, t)
+	// We can make some extra assertions here, as it's impossible for a pot to be split among opponents
+	totalPotsWon := sim.PotsWon + sim.BestOpponentPotsWon
+	if math.Abs(totalPotsWon-float64(simulations)) > 1e-6 {
+		t.Errorf("Total pots won does not add up: %v us + %v best opponent = %v vs %v", sim.PotsWon, sim.BestOpponentPotsWon, totalPotsWon, simulations)
+	}
+	totalPotsWon = sim.PotsWon + sim.RandomOpponentPotsWon
+	if math.Abs(totalPotsWon-float64(simulations)) > 1e-6 {
+		t.Errorf("Total pots won does not add up: %v us + %v random opponent = %v vs %v", sim.PotsWon, sim.RandomOpponentPotsWon, totalPotsWon, simulations)
+	}
 }
 
 func TestPairs(t *testing.T) {

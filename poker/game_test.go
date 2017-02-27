@@ -203,13 +203,23 @@ func TestSharedPot(t *testing.T) {
 		}
 		res := calcHandOutcome(outcomes, rng)
 		expectedWin := 1.0 / float64(split)
+		expectedOpponentWin := 0.0
+		if split > 1 {
+			expectedOpponentWin = expectedWin
+		}
 		if math.Abs(res.PotFractionWon-expectedWin) > 1e-6 {
 			t.Errorf("Expected %v-way split to win %v of pot, found %v", split, expectedWin, res.PotFractionWon)
+		}
+		if math.Abs(res.BestOpponentPotFractionWon-expectedOpponentWin) > 1e-6 {
+			t.Errorf("Expected %v-way split to win best opponent %v of pot, found %v", split, expectedOpponentWin, res.BestOpponentPotFractionWon)
+		}
+		if res.RandomOpponentPotFractionWon != 0 && math.Abs(res.RandomOpponentPotFractionWon-expectedOpponentWin) > 1e-6 {
+			t.Errorf("Expected %v-way split to give random opponent nothing or %v of pot, found %v", split, expectedOpponentWin, res.RandomOpponentPotFractionWon)
 		}
 	}
 }
 
-func TestSimInternalSanity(t *testing.T) {
+func TestHandOutcomeSanity(t *testing.T) {
 	p := NewPack()
 	tests := 1000
 	for i := 0; i < tests; i++ {
@@ -224,6 +234,12 @@ func TestSimInternalSanity(t *testing.T) {
 		if res.PotFractionWon < 0 || res.PotFractionWon > 1 {
 			t.Errorf("Pot fraction won must be between 0 and 1: %v", res.PotFractionWon)
 		}
+		if res.BestOpponentPotFractionWon < 0 || res.BestOpponentPotFractionWon > 1 {
+			t.Errorf("Best opponent pot fraction won must be between 0 and 1: %v", res.BestOpponentPotFractionWon)
+		}
+		if res.RandomOpponentPotFractionWon < 0 || res.RandomOpponentPotFractionWon > 1 {
+			t.Errorf("Random opponent pot fraction won must be between 0 and 1: %v", res.RandomOpponentPotFractionWon)
+		}
 		if res.Won {
 			if Beats(res.BestOpponentLevel, res.OurLevel) {
 				t.Errorf("Simulator says we won but best opponent %v beats our %v", res.BestOpponentLevel, res.OurLevel)
@@ -233,6 +249,12 @@ func TestSimInternalSanity(t *testing.T) {
 			}
 			if math.Abs(res.PotFractionWon) < 1e-6 {
 				t.Errorf("Simulator says we won but we didn't win any of the pot: %v", res.PotFractionWon)
+			}
+			if res.OpponentWon && math.Abs(res.PotFractionWon-res.BestOpponentPotFractionWon) > 1e-6 {
+				t.Errorf("Simulator says both we and best opponent won but we won different amounts: %v vs %v", res.PotFractionWon, res.BestOpponentPotFractionWon)
+			}
+			if res.RandomOpponentWon && math.Abs(res.PotFractionWon-res.RandomOpponentPotFractionWon) > 1e-6 {
+				t.Errorf("Simulator says both we and random opponent won but we won different amounts: %v vs %v", res.PotFractionWon, res.RandomOpponentPotFractionWon)
 			}
 		} else {
 			if !Beats(res.BestOpponentLevel, res.OurLevel) {
@@ -252,9 +274,21 @@ func TestSimInternalSanity(t *testing.T) {
 			if math.Abs(res.PotFractionWon-1.0) < 1e-6 {
 				t.Errorf("Simulator says opponent won but we won the whole pot: %v", res.PotFractionWon)
 			}
+			if math.Abs(res.BestOpponentPotFractionWon) < 1e-6 {
+				t.Errorf("Simulator says opponent won, but they didn't win any of the pot: %v", res.BestOpponentPotFractionWon)
+			}
+			if res.RandomOpponentWon && math.Abs(res.BestOpponentPotFractionWon-res.RandomOpponentPotFractionWon) > 1e-6 {
+				t.Errorf("Simulator says both best and random opponent won, but they won different amounts: %v vs %v", res.BestOpponentPotFractionWon, res.RandomOpponentPotFractionWon)
+			}
 		} else {
 			if res.PotFractionWon != 1.0 {
 				t.Errorf("Simulator says we were the sole winner but we didn't win the whole pot: %v", res.PotFractionWon)
+			}
+			if res.BestOpponentPotFractionWon != 0 {
+				t.Errorf("Simulator says we were the sole winner but best opponent won chips: %v", res.BestOpponentPotFractionWon)
+			}
+			if res.RandomOpponentPotFractionWon != 0 {
+				t.Errorf("Simulator says we were the sole winner but random opponent won chips: %v", res.RandomOpponentPotFractionWon)
 			}
 		}
 		if res.RandomOpponentWon {
@@ -269,6 +303,9 @@ func TestSimInternalSanity(t *testing.T) {
 			}
 			if math.Abs(res.PotFractionWon-1.0) < 1e-6 {
 				t.Errorf("Simulator says random opponent won but we won the whole pot: %v", res.PotFractionWon)
+			}
+			if math.Abs(res.RandomOpponentPotFractionWon) < 1e-6 {
+				t.Errorf("Simulator says random opponent won but they didn't win any chips: %v", res.RandomOpponentPotFractionWon)
 			}
 		}
 	}
