@@ -99,12 +99,15 @@ app.controller('StartingCardsController', function($scope, $http) {
 
     $scope.onResult = function (rank1, rank2, samesuit, result) {
         result.Cards = rank1 + rank2 + (samesuit ? "s" : "");
-        result.PotsPercentageWon = 100.0 * result.PotsWon / result.HandCount;
-        result.PotsWonVersusPrior = (result.PotsWon / result.HandCount) * $scope.players;
-        result.BestOpponentPotsPercentageWon = 100.0 * result.BestOpponentPotsWon / result.HandCount;
-        result.BestOpponentPotsWonVersusPrior = (result.BestOpponentPotsWon / result.HandCount) / (($scope.players - 1) / $scope.players);
-        result.RandomOpponentPotsPercentageWon = 100.0 * result.RandomOpponentPotsWon / result.HandCount;
-        result.RandomOpponentPotsWonVersusPrior = (result.RandomOpponentPotsWon / result.HandCount) * $scope.players;
+        var avgPotsWon = result.PotsWon / result.HandCount
+        result.PotsPercentageWon = 100.0 * avgPotsWon;
+        result.PotsWonVersusPrior = avgPotsWon * $scope.players;
+        var avgBestOppPotsWon = result.BestOpponentPotsWon / result.HandCount;
+        result.BestOpponentPotsPercentageWon = 100.0 * avgBestOppPotsWon;
+        result.BestOpponentPotsWonVersusPrior = avgBestOppPotsWon / (($scope.players - 1) / $scope.players);
+        var avgRandOppPotsWon = result.RandomOpponentPotsWon / result.HandCount;
+        result.RandomOpponentPotsPercentageWon = 100.0 * avgRandOppPotsWon;
+        result.RandomOpponentPotsWonVersusPrior = avgRandOppPotsWon * $scope.players;
         $scope.results.push(result);
         $scope.results.sort(function(a,b) {return b.PotsWon - a.PotsWon});
         $scope.resultsPending -= 1;
