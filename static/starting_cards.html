@@ -1,23 +1,43 @@
 <!DOCTYPE html>
-<html>
-<head><title>Texas Hold'em starting cards</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-table.resultTable { border-collapse: collapse }
-th.resultTable, td.resultTable { border: 1px solid black; padding: 3px }
-</style>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.9/angular.min.js"></script>
-</head><body>
+<html lang="en">
+<head>
 
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Texas Hold'em hole cards</title>
+
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<style>
+th { text-align: center }
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular.min.js"></script>
+</head>
+<body>
 <div ng-app="startingCardsApp" ng-controller="StartingCardsController">
-<h1>Texas Hold'em starting cards</h1>
-<table>
-<tr><td>Players</td><td><input type="text" ng-model="players"/></td></tr>
-<tr><td>Hands to simulate</td><td><input type="text" ng-model="handsToPlay"/></td></tr>
-<tr><td><button ng-click="simulate()" ng-disabled="started">Simulate</button></td><td>Simulation {{status()}}</td></tr>
-</table>
+<div class="container-fluid">
+<h1>Texas Hold'em hole cards</h1>
+
+<div class="row col-xs-12">
+<div class="form-group">
+<label for="playerCount">Players</label>
+<input type="text" id="playerCount" ng-model="players" class="form-control"/>
+</div>
+<div class="form-group">
+<label for="handsToPlay">Hands to simulate</label>
+<input type="text" id="handsToPlay" ng-model="handsToPlay" class="form-control"/>
+</div>
+<div class="form-group">
+<button ng-click="simulate()" ng-disabled="started" class="btn btn-primary">Simulate</button>
+Simulation {{status()}}
+</div>
+</div>
+
+<div class="row col-xs-12">
 <h2>Results</h2>
-<table class="resultTable">
+<table class="table">
 <tr><th rowspan="2" class="resultTable">Cards</th><th colspan="3" class="resultTable">Win probability (versus prior)</th></tr>
 <tr><th class="resultTable">You</th><th class="resultTable">Best opponent</th><th class="resultTable">Random opponent</th></tr>
 <tr ng-repeat="result in results">
@@ -27,6 +47,8 @@ th.resultTable, td.resultTable { border: 1px solid black; padding: 3px }
 <td class="resultTable">{{(100 * result.RandomOpponentWinCount / result.HandCount) | number : 1}}% ({{result.RandomOpponentWinCount / (result.HandCount / players) | number : 2}})</td>
 </tr>
 </table>
+</div>
+</div>
 </div>
 
 <script>
@@ -50,9 +72,9 @@ app.controller('StartingCardsController', function($scope, $http) {
 
     $scope.simulateOne = function(rank1, rank2, samesuit) {
         var url = "/startingcards/sim?rank1=" + rank1 + "&rank2=" + rank2 + "&samesuit=" + samesuit + "&players=" + $scope.players + "&handstoplay=" + $scope.handsToPlay;
-        $http.get(url).success(function (response) {
-            $scope.onResult(rank1, rank2, samesuit, response);
-        }).error(function (response, status) {
+        $http.get(url).then(function (response) {
+            $scope.onResult(rank1, rank2, samesuit, response.data);
+        }, function (response, status) {
             $scope.onError(rank1, rank2, samesuit, response, status);
         });
         $scope.requestsMade += 1;
