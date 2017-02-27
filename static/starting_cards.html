@@ -39,9 +39,10 @@ Simulation {{status()}}
 <div class="row col-xs-12">
 <h2>Results</h2>
 <table class="table table-bordered table-condensed">
-<tr><th rowspan="2">Cards</th><th colspan="3">Average pot win (versus prior)</th></tr>
+<tr><th rowspan="2">Rank</th><th rowspan="2">Cards</th><th colspan="3">Average pot win (versus prior)</th></tr>
 <tr><th>You</th><th>Best opponent</th><th>Random opponent</th></tr>
 <tr ng-repeat="result in results">
+<td class="numcell">{{$index + 1}}</td>
 <td>{{result.Cards}}</td>
 <td class="numcell">{{result.PotsPercentageWon | number : 1}}% ({{result.PotsWonVersusPrior | number : 2}})</td>
 <td class="numcell">{{result.BestOpponentPotsPercentageWon | number : 1}}% ({{result.BestOpponentPotsWonVersusPrior | number : 2}})</td>
