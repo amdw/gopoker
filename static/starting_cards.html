@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <style>
 th { text-align: center }
+td.numcell { text-align: right }
 </style>
 
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular.min.js"></script>
@@ -37,14 +38,14 @@ Simulation {{status()}}
 
 <div class="row col-xs-12">
 <h2>Results</h2>
-<table class="table">
-<tr><th rowspan="2" class="resultTable">Cards</th><th colspan="3" class="resultTable">Win probability (versus prior)</th></tr>
-<tr><th class="resultTable">You</th><th class="resultTable">Best opponent</th><th class="resultTable">Random opponent</th></tr>
+<table class="table table-bordered table-condensed">
+<tr><th rowspan="2">Cards</th><th colspan="3">Win probability (versus prior)</th></tr>
+<tr><th>You</th><th>Best opponent</th><th>Random opponent</th></tr>
 <tr ng-repeat="result in results">
-<td class="resultTable">{{result.Cards}}</td>
-<td class="resultTable">{{(100 * result.WinCount / result.HandCount) | number : 1}}% ({{result.WinCount / (result.HandCount / players) | number : 2}})</td>
-<td class="resultTable">{{(100 * result.BestOpponentWinCount / result.HandCount) | number : 1}}% ({{result.BestOpponentWinCount / (result.HandCount * (players - 1) / players) | number : 2}})</td>
-<td class="resultTable">{{(100 * result.RandomOpponentWinCount / result.HandCount) | number : 1}}% ({{result.RandomOpponentWinCount / (result.HandCount / players) | number : 2}})</td>
+<td>{{result.Cards}}</td>
+<td class="numcell">{{(100 * result.WinCount / result.HandCount) | number : 1}}% ({{result.WinCount / (result.HandCount / players) | number : 2}})</td>
+<td class="numcell">{{(100 * result.BestOpponentWinCount / result.HandCount) | number : 1}}% ({{result.BestOpponentWinCount / (result.HandCount * (players - 1) / players) | number : 2}})</td>
+<td class="numcell">{{(100 * result.RandomOpponentWinCount / result.HandCount) | number : 1}}% ({{result.RandomOpponentWinCount / (result.HandCount / players) | number : 2}})</td>
 </tr>
 </table>
 </div>
