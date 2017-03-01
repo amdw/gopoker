@@ -53,7 +53,7 @@ func makePossibleCombinations(tableCards, holeCards []poker.Card) [][]poker.Card
 
 // Only low hands which are 8-high or better qualify for consideration as the best low hand
 func lowLevelQualifies(level poker.HandLevel) bool {
-	return level.Class == poker.HighCard && poker.IsRankLess(level.Tiebreaks[0], poker.Eight, true)
+	return level.Class == poker.HighCard && poker.IsRankLess(level.Tiebreaks[0], poker.Nine, true)
 }
 
 type Omaha8Level struct {
@@ -86,4 +86,58 @@ func classify(tableCards, holeCards []poker.Card) Omaha8Level {
 	}
 
 	return Omaha8Level{bestHighLevel, bestLowLevel, bestHighHand, bestLowHand, lowLevelQualifies(bestLowLevel)}
+}
+
+type PlayerOutcome struct {
+	Player         int
+	Level          Omaha8Level
+	PotFractionWon float64
+}
+
+func PlayerOutcomes(tableCards []poker.Card, playerCards [][]poker.Card) []PlayerOutcome {
+	levels := make([]Omaha8Level, len(playerCards))
+	for i, hand := range playerCards {
+		levels[i] = classify(tableCards, hand)
+	}
+
+	// Now work out how the pot should be divided
+	bestHighLevel := levels[0].HighLevel
+	bestLowLevel := levels[0].LowLevel
+	for i := 1; i < len(levels); i++ {
+		if poker.Beats(levels[i].HighLevel, bestHighLevel) {
+			bestHighLevel = levels[i].HighLevel
+		}
+		if poker.BeatsAceToFiveLow(levels[i].LowLevel, bestLowLevel) {
+			bestLowLevel = levels[i].LowLevel
+		}
+	}
+
+	highWinners := make([]int, 0, len(levels))
+	lowWinners := make([]int, 0, len(levels))
+	lowQualified := lowLevelQualifies(bestLowLevel)
+	result := make([]PlayerOutcome, len(levels))
+	for i, level := range levels {
+		outcome := PlayerOutcome{i + 1, level, 0}
+		if !poker.Beats(bestHighLevel, level.HighLevel) {
+			highWinners = append(highWinners, i)
+		}
+		if lowQualified && !poker.BeatsAceToFiveLow(bestLowLevel, level.LowLevel) {
+			lowWinners = append(lowWinners, i)
+		}
+		result[i] = outcome
+	}
+
+	// If there were no eligible low hands then the whole pot goes to the best high hand
+	highMultiple := 0.5
+	if len(lowWinners) == 0 {
+		highMultiple = 1.0
+	}
+	for _, highWinnerIdx := range highWinners {
+		result[highWinnerIdx].PotFractionWon += highMultiple / float64(len(highWinners))
+	}
+	for _, lowWinnerIdx := range lowWinners {
+		result[lowWinnerIdx].PotFractionWon += 0.5 / float64(len(lowWinners))
+	}
+
+	return result
 }
