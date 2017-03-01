@@ -22,6 +22,7 @@ package poker_http
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/amdw/gopoker/holdem"
 	"github.com/amdw/gopoker/poker"
 	"io"
 	"log"
@@ -70,12 +71,12 @@ func getRank(req *http.Request, key string, w http.ResponseWriter) (poker.Rank, 
 }
 
 type SimParams struct {
-	StartingPair poker.StartingPair
+	StartingPair holdem.StartingPair
 	Players      int
 	HandsToPlay  int
 }
 
-func (params SimParams) RunSimulation() *poker.Simulator {
+func (params SimParams) RunSimulation() *holdem.Simulator {
 	return params.StartingPair.RunSimulation(params.Players, params.HandsToPlay)
 }
 
@@ -118,7 +119,7 @@ func getStartingPair(req *http.Request, w http.ResponseWriter) (SimParams, bool)
 		}
 		handsToPlay = int(handsToPlay64)
 	}
-	startingPair := poker.StartingPair{rank1, rank2, sameSuit}
+	startingPair := holdem.StartingPair{rank1, rank2, sameSuit}
 	err = startingPair.Validate()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Bad pair: %v", err), http.StatusBadRequest)

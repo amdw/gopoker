@@ -22,11 +22,14 @@ package poker_http
 import (
 	"errors"
 	"fmt"
+	"github.com/amdw/gopoker/holdem"
 	"github.com/amdw/gopoker/poker"
 	"html/template"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func Menu(w http.ResponseWriter, req *http.Request) {
@@ -80,9 +83,10 @@ func PlayHoldem(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, `<form method="get">Players: <input type="text" name="%v" value="%v"/><input type="submit" value="Rerun"/></form>`, playersKey, players)
 
 	pack := poker.NewPack()
-	pack.Shuffle()
-	onTable, playerCards := pack.Deal(players)
-	sortedOutcomes := poker.DealOutcomes(onTable, playerCards)
+	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+	pack.Shuffle(randGen)
+	onTable, playerCards := holdem.Deal(&pack, players)
+	sortedOutcomes := holdem.DealOutcomes(onTable, playerCards)
 	fmt.Fprintf(w, "<h2>Table cards</h2><p>%v</p>", formatCards(onTable))
 	fmt.Fprintf(w, "<h2>Player cards</h2><ul>")
 	for player := 0; player < players; player++ {

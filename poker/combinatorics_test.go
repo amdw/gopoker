@@ -82,7 +82,7 @@ func TestCardCombinations(t *testing.T) {
 	}
 	lexSortHands(expectedChoices)
 
-	choices := allCardCombinations(cards, 3)
+	choices := AllCardCombinations(cards, 3)
 	lexSortHands(choices)
 
 	if len(choices) != len(expectedChoices) {

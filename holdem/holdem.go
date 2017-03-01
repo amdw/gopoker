@@ -17,25 +17,48 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 */
-package poker
+package holdem
 
 import (
 	"fmt"
+	"github.com/amdw/gopoker/poker"
 	"math/rand"
 	"sort"
-	"time"
 )
+
+func Classify(holeCards, tableCards []poker.Card) (poker.HandLevel, []poker.Card) {
+	allCards := make([]poker.Card, 7)
+	copy(allCards, holeCards)
+	copy(allCards[2:], tableCards)
+
+	// Construct all possible hands and find the best one
+	allPossibleHands := poker.AllCardCombinations(allCards, 5)
+
+	bestHand := allPossibleHands[0]
+	bestRank := poker.ClassifyHand(bestHand)
+
+	for i := 1; i < len(allPossibleHands); i++ {
+		hand := allPossibleHands[i]
+		rank := poker.ClassifyHand(hand)
+		if poker.Beats(rank, bestRank) {
+			bestHand = hand
+			bestRank = rank
+		}
+	}
+
+	return bestRank, bestHand
+}
 
 type PlayerOutcome struct {
 	Player int
-	Level  HandLevel
-	Cards  []Card
+	Level  poker.HandLevel
+	Cards  []poker.Card
 }
 
-func sortHands(outcomes []PlayerOutcome) {
+func sortOutcomes(outcomes []PlayerOutcome) {
 	sort.Slice(outcomes, func(i, j int) bool {
-		iBeatsJ := Beats(outcomes[i].Level, outcomes[j].Level)
-		jBeatsI := Beats(outcomes[j].Level, outcomes[i].Level)
+		iBeatsJ := poker.Beats(outcomes[i].Level, outcomes[j].Level)
+		jBeatsI := poker.Beats(outcomes[j].Level, outcomes[i].Level)
 		if iBeatsJ && !jBeatsI {
 			return true
 		}
@@ -46,40 +69,14 @@ func sortHands(outcomes []PlayerOutcome) {
 	})
 }
 
-type Pack struct {
-	Cards   [52]Card
-	randGen *rand.Rand
-}
-
-func (p *Pack) initialise() {
-	// Not cryptographically secure, but fine for simulation, where performance is more important
-	p.randGen = rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	i := 0
-	for s := 0; s < 4; s++ {
-		for r := 0; r < 13; r++ {
-			p.Cards[i] = Card{Rank(r), Suit(s)}
-			i++
-		}
-	}
-}
-
-// Shuffle the pack
-func (p *Pack) Shuffle() {
-	for i := 0; i < 52; i++ {
-		j := p.randGen.Intn(52-i) + i
-		p.Cards[i], p.Cards[j] = p.Cards[j], p.Cards[i]
-	}
-}
-
 // Shuffle the pack, but fix certain cards in place. For use in simulations.
 // It is assumed that there are no duplicate cards in (tableCards+yourCards).
-func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
+func shuffleFixing(p *poker.Pack, tableCards, yourCards []poker.Card, randGen *rand.Rand) {
 	if len(tableCards) > 5 || len(yourCards) > 2 {
 		panic(fmt.Sprintf("Maximum of 5 table cards and 2 hole cards supported, found %v and %v", len(tableCards), len(yourCards)))
 	}
 
-	indexOf := func(cards [52]Card, card Card) int {
+	indexOf := func(cards [52]poker.Card, card poker.Card) int {
 		result := -1
 		for i, c := range cards {
 			if c == card {
@@ -91,7 +88,7 @@ func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
 	}
 
 	// Just shuffle the pack and then swap the fixed cards into place from wherever they are in the deck
-	p.Shuffle()
+	p.Shuffle(randGen)
 	for i := 0; i < len(tableCards); i++ {
 		swapIdx := indexOf(p.Cards, tableCards[i])
 		p.Cards[i], p.Cards[swapIdx] = p.Cards[swapIdx], p.Cards[i]
@@ -103,14 +100,14 @@ func (p *Pack) shuffleFixing(tableCards, yourCards []Card) {
 	}
 }
 
-func (p *Pack) Deal(players int) (onTable []Card, playerCards [][]Card) {
+func Deal(p *poker.Pack, players int) (onTable []poker.Card, playerCards [][]poker.Card) {
 	if players < 1 {
 		panic(fmt.Sprintf("At least one player required, found %v", players))
 	}
 
 	onTable = p.Cards[0:5]
 
-	playerCards = make([][]Card, players)
+	playerCards = make([][]poker.Card, players)
 	for player := 0; player < players; player++ {
 		playerCards[player] = p.Cards[5+2*player : 7+2*player]
 	}
@@ -121,18 +118,13 @@ func (p *Pack) Deal(players int) (onTable []Card, playerCards [][]Card) {
 // Assess the hand each player holds and return a sorted list of outcomes
 // by hand strength (descending) then player number (ascending).
 // Player numbers are in ascending order of playerCards entries, starting with 1.
-func DealOutcomes(onTable []Card, playerCards [][]Card) []PlayerOutcome {
+func DealOutcomes(onTable []poker.Card, playerCards [][]poker.Card) []PlayerOutcome {
 	outcomes := make([]PlayerOutcome, len(playerCards))
 	for playerIdx, hand := range playerCards {
-		// In Hold'em it is not mandatory to use the cards in your hand,
-		// so they are all optional
-		combinedCards := make([]Card, 7)
-		copy(combinedCards[0:5], onTable)
-		copy(combinedCards[5:7], hand)
-		level, cards := Classify(combinedCards)
+		level, cards := Classify(hand, onTable)
 		outcomes[playerIdx] = PlayerOutcome{playerIdx + 1, level, cards}
 	}
-	sortHands(outcomes)
+	sortOutcomes(outcomes)
 	return outcomes
 }
 
@@ -140,7 +132,7 @@ type HandOutcome struct {
 	Won, OpponentWon, RandomOpponentWon                      bool
 	PotFractionWon                                           float64
 	BestOpponentPotFractionWon, RandomOpponentPotFractionWon float64
-	OurLevel, BestOpponentLevel, RandomOpponentLevel         HandLevel
+	OurLevel, BestOpponentLevel, RandomOpponentLevel         poker.HandLevel
 }
 
 func calcPotFraction(won bool, potSplit int) float64 {
@@ -166,17 +158,17 @@ func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) *HandOutcome 
 			opponentOutcomes[i] = o
 			i++
 		}
-		if !Beats(outcomes[0].Level, o.Level) {
+		if !poker.Beats(outcomes[0].Level, o.Level) {
 			// The best hand doesn't beat this hand so it must be a winner
 			potSplit++
 		}
 	}
 
-	bestOpponentWon := !Beats(ourOutcome.Level, opponentOutcomes[0].Level)
+	bestOpponentWon := !poker.Beats(ourOutcome.Level, opponentOutcomes[0].Level)
 
 	randomOpponentIdx := randGen.Intn(len(opponentOutcomes))
 	randomOpponentLevel := opponentOutcomes[randomOpponentIdx].Level
-	randomOpponentWon := !Beats(outcomes[0].Level, randomOpponentLevel)
+	randomOpponentWon := !poker.Beats(outcomes[0].Level, randomOpponentLevel)
 
 	potFractionWon := calcPotFraction(won, potSplit)
 	bestOpponentPotFraction := calcPotFraction(bestOpponentWon, potSplit)
@@ -189,14 +181,8 @@ func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) *HandOutcome 
 
 // Play out one hand of Texas Hold'em and return whether or not player 1 won,
 // plus player 1's hand level, plus the best hand level of any of player 1's opponents.
-func (p *Pack) SimulateOneHoldemHand(players int) *HandOutcome {
-	onTable, playerCards := p.Deal(players)
+func SimulateOneHoldemHand(p *poker.Pack, players int, randGen *rand.Rand) *HandOutcome {
+	onTable, playerCards := Deal(p, players)
 	outcomes := DealOutcomes(onTable, playerCards)
-	return calcHandOutcome(outcomes, p.randGen)
-}
-
-func NewPack() Pack {
-	var result Pack
-	result.initialise()
-	return result
+	return calcHandOutcome(outcomes, randGen)
 }

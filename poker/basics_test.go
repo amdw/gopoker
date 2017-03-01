@@ -1,5 +1,5 @@
 /*
-Copyright 2013, 2015-2017 Andrew Medworth
+Copyright 2017 Andrew Medworth
 
 This file is part of Gopoker, a set of miscellaneous poker-related functions
 written in the Go programming language (http://golang.org).
@@ -24,6 +24,8 @@ import (
 	"testing"
 )
 
+var h = TestMakeHand
+
 func TestCardBasics(t *testing.T) {
 	for s := Heart; s <= Club; s++ {
 		for r := Two; r <= Ace; r++ {
@@ -44,56 +46,17 @@ func TestCardBasics(t *testing.T) {
 	}
 }
 
-type LevelTest struct {
-	l1        HandLevel
-	l2        HandLevel
-	isGreater bool
-	isLess    bool
-}
-
-func hl(class HandClass, tieBreaks ...Rank) HandLevel {
-	return HandLevel{class, tieBreaks}
-}
-
-var levelTests = []LevelTest{
-	{hl(StraightFlush, Ace), hl(StraightFlush, Ace), false, false},
-	{hl(StraightFlush, Ace), hl(StraightFlush, King), true, false},
-	{hl(FourOfAKind, Nine, Ten), hl(StraightFlush, Two), false, true},
-	{MinLevel(), hl(HighCard, Two, Two, Two, Two, Three), false, true},
-}
-
-func TestLevels(t *testing.T) {
-	for _, ltst := range levelTests {
-		gt := Beats(ltst.l1, ltst.l2)
-		lt := Beats(ltst.l2, ltst.l1)
-		if gt != ltst.isGreater {
-			t.Errorf("Expected %q beats %q == %v, found %v", ltst.l1, ltst.l2, ltst.isGreater, gt)
-		}
-		if lt != ltst.isLess {
-			t.Errorf("Expected %q beats %q == %v, found %v", ltst.l2, ltst.l1, ltst.isLess, lt)
-		}
-	}
-}
-
-func h(cards ...string) []Card {
-	result := make([]Card, len(cards))
-	for i, c := range cards {
-		result[i] = C(c)
-	}
-	return result
-}
-
 func TestSorting(t *testing.T) {
 	cards := h("AS", "JC", "QD", "3C", "4S", "10C")
 
-	sortCards(cards, false)
+	SortCards(cards, false)
 	for i, c := range h("AS", "QD", "JC", "10C", "4S", "3C") {
 		if cards[i] != c {
 			t.Errorf("Expected %v at position %v of ace-high list, found %v", c, i, cards[i])
 		}
 	}
 
-	sortCards(cards, true)
+	SortCards(cards, true)
 	for i, c := range h("QD", "JC", "10C", "4S", "3C", "AS") {
 		if cards[i] != c {
 			t.Errorf("Expected %v at position %v of ace-low list, found %v", c, i, cards[i])

@@ -17,11 +17,12 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 */
-package poker
+package holdem
 
 import (
 	"errors"
 	"fmt"
+	"github.com/amdw/gopoker/poker"
 	"math"
 	"math/rand"
 	"time"
@@ -47,10 +48,10 @@ type Simulator struct {
 	ClassBestOppWinCounts []int
 	ClassRandOppWinCounts []int
 
-	BestHand          HandLevel
-	BestOppHand       HandLevel
-	ClassBestHands    []HandLevel
-	ClassBestOppHands []HandLevel
+	BestHand          poker.HandLevel
+	BestOppHand       poker.HandLevel
+	ClassBestHands    []poker.HandLevel
+	ClassBestOppHands []poker.HandLevel
 }
 
 func (s *Simulator) reset(players, handsToPlay int) {
@@ -64,24 +65,24 @@ func (s *Simulator) reset(players, handsToPlay int) {
 	s.BestOpponentPotsWon = 0
 	s.RandomOpponentPotsWon = 0
 
-	s.OurClassCounts = make([]int, MAX_HANDCLASS)
-	s.BestOpponentClassCounts = make([]int, MAX_HANDCLASS)
-	s.RandomOpponentClassCounts = make([]int, MAX_HANDCLASS)
+	s.OurClassCounts = make([]int, poker.MAX_HANDCLASS)
+	s.BestOpponentClassCounts = make([]int, poker.MAX_HANDCLASS)
+	s.RandomOpponentClassCounts = make([]int, poker.MAX_HANDCLASS)
 
-	s.ClassWinCounts = make([]int, MAX_HANDCLASS)
-	s.ClassJointWinCounts = make([]int, MAX_HANDCLASS)
-	s.ClassBestOppWinCounts = make([]int, MAX_HANDCLASS)
-	s.ClassRandOppWinCounts = make([]int, MAX_HANDCLASS)
+	s.ClassWinCounts = make([]int, poker.MAX_HANDCLASS)
+	s.ClassJointWinCounts = make([]int, poker.MAX_HANDCLASS)
+	s.ClassBestOppWinCounts = make([]int, poker.MAX_HANDCLASS)
+	s.ClassRandOppWinCounts = make([]int, poker.MAX_HANDCLASS)
 
-	s.BestHand = MinLevel()
-	s.BestOppHand = MinLevel()
-	s.ClassBestHands = make([]HandLevel, MAX_HANDCLASS)
+	s.BestHand = poker.MinLevel()
+	s.BestOppHand = poker.MinLevel()
+	s.ClassBestHands = make([]poker.HandLevel, poker.MAX_HANDCLASS)
 	for i := range s.ClassBestHands {
-		s.ClassBestHands[i] = MinLevel()
+		s.ClassBestHands[i] = poker.MinLevel()
 	}
-	s.ClassBestOppHands = make([]HandLevel, MAX_HANDCLASS)
+	s.ClassBestOppHands = make([]poker.HandLevel, poker.MAX_HANDCLASS)
 	for i := range s.ClassBestOppHands {
-		s.ClassBestOppHands[i] = MinLevel()
+		s.ClassBestOppHands[i] = poker.MinLevel()
 	}
 }
 
@@ -109,42 +110,43 @@ func (s *Simulator) processHand(outcome *HandOutcome) {
 	s.BestOpponentClassCounts[outcome.BestOpponentLevel.Class]++
 	s.RandomOpponentClassCounts[outcome.RandomOpponentLevel.Class]++
 
-	if Beats(outcome.OurLevel, s.BestHand) {
+	if poker.Beats(outcome.OurLevel, s.BestHand) {
 		s.BestHand = outcome.OurLevel
 	}
-	if Beats(outcome.BestOpponentLevel, s.BestOppHand) {
+	if poker.Beats(outcome.BestOpponentLevel, s.BestOppHand) {
 		s.BestOppHand = outcome.BestOpponentLevel
 	}
-	if Beats(outcome.OurLevel, s.ClassBestHands[outcome.OurLevel.Class]) {
+	if poker.Beats(outcome.OurLevel, s.ClassBestHands[outcome.OurLevel.Class]) {
 		s.ClassBestHands[outcome.OurLevel.Class] = outcome.OurLevel
 	}
-	if Beats(outcome.BestOpponentLevel, s.ClassBestOppHands[outcome.BestOpponentLevel.Class]) {
+	if poker.Beats(outcome.BestOpponentLevel, s.ClassBestOppHands[outcome.BestOpponentLevel.Class]) {
 		s.ClassBestOppHands[outcome.BestOpponentLevel.Class] = outcome.BestOpponentLevel
 	}
 }
 
-func (s *Simulator) SimulateHoldem(tableCards, yourCards []Card, players, handsToPlay int) {
+func (s *Simulator) SimulateHoldem(tableCards, yourCards []poker.Card, players, handsToPlay int) {
 	// Very crude attempt to detect situation where exhaustive enumeration is cheaper than simulation
 	if len(tableCards) == 5 && len(yourCards) == 2 && players == 2 && handsToPlay > 990 {
 		s.enumerateHoldem(tableCards, yourCards, players)
 		return
 	}
 	s.reset(players, handsToPlay)
-	p := NewPack()
+	p := poker.NewPack()
+	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < handsToPlay; i++ {
-		p.shuffleFixing(tableCards, yourCards)
-		handOutcome := p.SimulateOneHoldemHand(players)
+		shuffleFixing(&p, tableCards, yourCards, randGen)
+		handOutcome := SimulateOneHoldemHand(&p, players, randGen)
 		s.processHand(handOutcome)
 	}
 }
 
-func (s *Simulator) enumerateHoldem(tableCards, yourCards []Card, players int) {
+func (s *Simulator) enumerateHoldem(tableCards, yourCards []poker.Card, players int) {
 	s.reset(players, 0)
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 	// For now we only enumerate the case where we have only one opponent and a full set of table cards.
-	remainingPack := make([]Card, 45)
+	remainingPack := make([]poker.Card, 45)
 	i := 0
-	isUsed := func(card Card) bool {
+	isUsed := func(card poker.Card) bool {
 		for _, c := range tableCards {
 			if c == card {
 				return true
@@ -157,15 +159,15 @@ func (s *Simulator) enumerateHoldem(tableCards, yourCards []Card, players int) {
 		}
 		return false
 	}
-	for _, card := range NewPack().Cards {
+	for _, card := range poker.NewPack().Cards {
 		if !isUsed(card) {
 			remainingPack[i] = card
 			i++
 		}
 	}
-	opponentHands := allCardCombinations(remainingPack, 2)
+	opponentHands := poker.AllCardCombinations(remainingPack, 2)
 	for _, opponentHand := range opponentHands {
-		playerCards := [][]Card{yourCards, opponentHand}
+		playerCards := [][]poker.Card{yourCards, opponentHand}
 		outcomes := DealOutcomes(tableCards, playerCards)
 		handOutcome := calcHandOutcome(outcomes, randGen)
 		s.processHand(handOutcome)
@@ -186,7 +188,7 @@ func (s *Simulator) PotOddsBreakEven() float64 {
 }
 
 type StartingPair struct {
-	Rank1, Rank2 Rank
+	Rank1, Rank2 poker.Rank
 	SameSuit     bool
 }
 
@@ -197,16 +199,16 @@ func (pair StartingPair) Validate() error {
 	return nil
 }
 
-func (pair StartingPair) SampleCards() (Card, Card) {
+func (pair StartingPair) SampleCards() (poker.Card, poker.Card) {
 	err := pair.Validate()
 	if err != nil {
 		panic(err)
 	}
 	// Just pick arbitrary suits, either the same or different
-	card1 := Card{pair.Rank1, Club}
-	card2 := Card{pair.Rank2, Heart}
+	card1 := poker.Card{pair.Rank1, poker.Club}
+	card2 := poker.Card{pair.Rank2, poker.Heart}
 	if pair.SameSuit {
-		card2.Suit = Club
+		card2.Suit = poker.Club
 	}
 	return card1, card2
 }
@@ -214,6 +216,6 @@ func (pair StartingPair) SampleCards() (Card, Card) {
 func (pair StartingPair) RunSimulation(players, handsToPlay int) *Simulator {
 	card1, card2 := pair.SampleCards()
 	result := &Simulator{}
-	result.SimulateHoldem([]Card{}, []Card{card1, card2}, players, handsToPlay)
+	result.SimulateHoldem([]poker.Card{}, []poker.Card{card1, card2}, players, handsToPlay)
 	return result
 }

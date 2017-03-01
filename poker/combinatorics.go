@@ -48,7 +48,7 @@ func binomial(n, r int) int {
 }
 
 // Compute all unique subsets of a set of cards, of a given size.
-func allCardCombinations(pack []Card, numRequired int) [][]Card {
+func AllCardCombinations(pack []Card, numRequired int) [][]Card {
 	result := make([][]Card, 0, binomial(len(pack), numRequired))
 	indices := make([]int, numRequired)
 	// Standard algorithm to enumerate k-combinations

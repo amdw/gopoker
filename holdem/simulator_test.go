@@ -17,9 +17,11 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
 */
-package poker
+package holdem
 
 import (
+	"fmt"
+	"github.com/amdw/gopoker/poker"
 	"math"
 	"testing"
 )
@@ -51,8 +53,8 @@ func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
 		t.Errorf("Illogical pot odds break-even point: %v", betBreakEven)
 	}
 	checkCounts := func(counts []int, shouldSumToSims bool, name string) int {
-		if len(counts) != int(MAX_HANDCLASS) {
-			t.Errorf("Expected %v %v, found %v", MAX_HANDCLASS, name, len(counts))
+		if len(counts) != int(poker.MAX_HANDCLASS) {
+			t.Errorf("Expected %v %v, found %v", poker.MAX_HANDCLASS, name, len(counts))
 		}
 		sum := 0
 		for i, c := range counts {
@@ -96,37 +98,37 @@ func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
 	}
 
 	for c, l := range sim.ClassBestHands {
-		if Beats(l, sim.BestHand) {
+		if poker.Beats(l, sim.BestHand) {
 			t.Errorf("Best hand %v of class %v better than overall best %v", l, c, sim.BestHand)
 		}
 	}
 	for c, l := range sim.ClassBestOppHands {
-		if Beats(l, sim.BestOppHand) {
+		if poker.Beats(l, sim.BestOppHand) {
 			t.Errorf("Best opponent hand %v of class %v better than overall best %v", l, c, sim.BestOppHand)
 		}
 	}
-	checkTiebreaks := func(tbs []Rank, name string) {
+	checkTiebreaks := func(tbs []poker.Rank, name string) {
 		if len(tbs) != 5 {
 			t.Errorf("Expected 5 tiebreaks for %v, found %v", name, len(tbs))
 		}
 	}
 	// Catches error with best-hand zero value
-	checkTiebreaks(sim.ClassBestHands[HighCard].Tiebreaks, "high-card best hands")
-	checkTiebreaks(sim.ClassBestOppHands[HighCard].Tiebreaks, "high-card opponent best hands")
+	checkTiebreaks(sim.ClassBestHands[poker.HighCard].Tiebreaks, "high-card best hands")
+	checkTiebreaks(sim.ClassBestOppHands[poker.HighCard].Tiebreaks, "high-card opponent best hands")
 }
 
 func TestSimSanity(t *testing.T) {
 	sim := Simulator{}
 	players := 5
 	simulations := 10000
-	sim.SimulateHoldem([]Card{}, []Card{}, players, simulations)
+	sim.SimulateHoldem([]poker.Card{}, []poker.Card{}, players, simulations)
 	assertSimSanity(&sim, players, simulations, t)
 }
 
 func TestTwoPlayers(t *testing.T) {
 	sim := Simulator{}
 	simulations := 10000
-	sim.SimulateHoldem([]Card{}, []Card{}, 2, simulations)
+	sim.SimulateHoldem([]poker.Card{}, []poker.Card{}, 2, simulations)
 	assertSimSanity(&sim, 2, simulations, t)
 	// We can make some extra assertions here, as it's impossible for a pot to be split among opponents
 	totalPotsWon := sim.PotsWon + sim.BestOpponentPotsWon
@@ -139,8 +141,20 @@ func TestTwoPlayers(t *testing.T) {
 	}
 }
 
+func sp(r1s, r2s string, suited bool) StartingPair {
+	r1, err := poker.MakeRank(r1s)
+	if err != nil {
+		panic(fmt.Sprintf("Cannot make rank from %v", r1s))
+	}
+	r2, err := poker.MakeRank(r2s)
+	if err != nil {
+		panic(fmt.Sprintf("Cannot make rank from %v", r2s))
+	}
+	return StartingPair{r1, r2, suited}
+}
+
 func TestPairs(t *testing.T) {
-	pairs := []StartingPair{StartingPair{King, Queen, false}, StartingPair{King, Queen, true}, StartingPair{King, King, false}}
+	pairs := []StartingPair{sp("K", "Q", false), sp("K", "Q", true), sp("K", "K", false)}
 	players := 6
 	simCount := 1000
 	for _, pair := range pairs {
@@ -171,33 +185,33 @@ func TestEnumeration(t *testing.T) {
 	// Should only do 45C2 = 990 simulations, one for each possible hand our opponent holds
 	assertSimSanity(&sim, 2, 990, t)
 
-	if sim.OurClassCounts[TwoPair] != 990 {
-		t.Errorf("We got two pair but got %v not 990!", sim.OurClassCounts[TwoPair])
+	if sim.OurClassCounts[poker.TwoPair] != 990 {
+		t.Errorf("We got two pair but got %v not 990!", sim.OurClassCounts[poker.TwoPair])
 	}
-	if sim.BestOpponentClassCounts[FourOfAKind] != 1 {
-		t.Errorf("Opponent has one way to make quads but found %v", sim.BestOpponentClassCounts[FourOfAKind])
+	if sim.BestOpponentClassCounts[poker.FourOfAKind] != 1 {
+		t.Errorf("Opponent has one way to make quads but found %v", sim.BestOpponentClassCounts[poker.FourOfAKind])
 	}
 	// There are two 8s, two 7s, three As and three Ks which could be in our opponent's hand.
 	// So they have the following ways to make a full house: 3 AAs, 3 KKs, one 77, six A8s, six K8s, four 78s
 	// for a total of 23.
-	if sim.BestOpponentClassCounts[FullHouse] != 23 {
-		t.Errorf("Opponent has 23 ways to make a full house but found %v", sim.BestOpponentClassCounts[FullHouse])
+	if sim.BestOpponentClassCounts[poker.FullHouse] != 23 {
+		t.Errorf("Opponent has 23 ways to make a full house but found %v", sim.BestOpponentClassCounts[poker.FullHouse])
 	}
 	// There are two 8s left in the deck and 43 other cards, so 86 ways to get exactly three 8s.
 	// Of these, 16 also pair another table card giving a full house, so there are 70 ways to be "on trips".
-	if sim.BestOpponentClassCounts[ThreeOfAKind] != 70 {
-		t.Errorf("Opponent has 70 ways to make trips but found %v", sim.BestOpponentClassCounts[ThreeOfAKind])
+	if sim.BestOpponentClassCounts[poker.ThreeOfAKind] != 70 {
+		t.Errorf("Opponent has 70 ways to make trips but found %v", sim.BestOpponentClassCounts[poker.ThreeOfAKind])
 	}
 	// 3 kings * 40 non-K/8 cards = 120 ways to get kings and another pair
 	// 2 sevens * 38 non-7/8/K cards = 76 ways to get sevens and another (non-K) pair
 	// 3 aces * 35 non-A/8/K/7 cards = 105 ways to get aces and another (non-K/7) pair
 	// 4C2 = 6 pairs for each of 8 values not represented, plus 3C2 = 3 nine pairs, for a total of 51 pocket pairs
 	// Total 352 ways to make two pair
-	if sim.BestOpponentClassCounts[TwoPair] != 352 {
-		t.Errorf("Opponent has 352 ways to make two pair but found %v", sim.BestOpponentClassCounts[TwoPair])
+	if sim.BestOpponentClassCounts[poker.TwoPair] != 352 {
+		t.Errorf("Opponent has 352 ways to make two pair but found %v", sim.BestOpponentClassCounts[poker.TwoPair])
 	}
 	// And 990 minus all the other scenarios gives 544
-	if sim.BestOpponentClassCounts[OnePair] != 544 {
-		t.Errorf("Opponent has 544 ways to make one pair but found %v", sim.BestOpponentClassCounts[OnePair])
+	if sim.BestOpponentClassCounts[poker.OnePair] != 544 {
+		t.Errorf("Opponent has 544 ways to make one pair but found %v", sim.BestOpponentClassCounts[poker.OnePair])
 	}
 }
