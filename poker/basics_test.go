@@ -24,8 +24,6 @@ import (
 	"testing"
 )
 
-var h = TestMakeHand
-
 func TestCardBasics(t *testing.T) {
 	for s := Heart; s <= Club; s++ {
 		for r := Two; r <= Ace; r++ {
@@ -43,6 +41,38 @@ func TestCardBasics(t *testing.T) {
 	// Test lower-case conversion
 	if C("JS") != C("js") {
 		t.Errorf("Should be able to accept lower-case cards, but found %v vs %v", C("JS"), C("js"))
+	}
+}
+
+type rankOrderTest struct {
+	r1, r2      Rank
+	lessAceHigh bool
+	lessAceLow  bool
+}
+
+var rankOrderTests = []rankOrderTest{
+	{Two, Three, true, true},
+	{Three, Two, false, false},
+	{Jack, King, true, true},
+	{King, Jack, false, false},
+	{Ace, Two, false, true},
+	{Two, Ace, true, false},
+	{Ace, King, false, true},
+	{King, Ace, true, false},
+	{Two, Two, false, false},
+	{Three, Three, false, false},
+}
+
+func TestRankOrdering(t *testing.T) {
+	for _, test := range rankOrderTests {
+		lah := IsRankLess(test.r1, test.r2, false)
+		lal := IsRankLess(test.r1, test.r2, true)
+		if lah != test.lessAceHigh {
+			t.Errorf("Expected %v < %v = %v ace high, found %v", test.r1, test.r2, test.lessAceHigh, lah)
+		}
+		if lal != test.lessAceLow {
+			t.Errorf("Expected %v < %v = %v ace low, found %v", test.r1, test.r2, test.lessAceLow, lal)
+		}
 	}
 }
 

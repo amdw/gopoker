@@ -221,18 +221,25 @@ func containsAllCards(cards, testSubset []Card) bool {
 	return true
 }
 
+func IsRankLess(rank1, rank2 Rank, aceLow bool) bool {
+	if rank1 == rank2 {
+		return false
+	}
+	if aceLow {
+		if rank1 == Ace {
+			return true
+		}
+		if rank2 == Ace {
+			return false
+		}
+	}
+	return rank1 < rank2
+}
+
 func SortCards(cards []Card, aceLow bool) {
 	sort.Slice(cards, func(i, j int) bool {
 		if cards[i].Rank != cards[j].Rank {
-			if aceLow {
-				if cards[i].Rank == Ace {
-					return false
-				}
-				if cards[j].Rank == Ace {
-					return true
-				}
-			}
-			return cards[i].Rank > cards[j].Rank
+			return IsRankLess(cards[j].Rank, cards[i].Rank, aceLow)
 		}
 		// Sort suits in an arbitrary way just to give a consistent ordering
 		return cards[i].Suit < cards[j].Suit

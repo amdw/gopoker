@@ -32,6 +32,8 @@ func TestMakeHand(cards ...string) []Card {
 	return result
 }
 
+var h = TestMakeHand // Helper for tests in this package
+
 func parseHandClass(handClassStr string) HandClass {
 	switch handClassStr {
 	case "StraightFlush":
@@ -69,6 +71,8 @@ func TestMakeHandLevel(handClassStr string, tieBreakRankStrs ...string) HandLeve
 	}
 	return HandLevel{class, tieBreaks}
 }
+
+var hl = TestMakeHandLevel // Helper for tests in this package
 
 // Assert that the pack contains exactly one of every card
 func TestPackPermutation(pack *Pack, t *testing.T) {

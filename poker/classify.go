@@ -121,6 +121,7 @@ func (hl HandLevel) PrettyPrint() string {
 // All the possible sets of ranks which make up straights, starting with the highest-value
 var straights = make([][]Rank, 0)
 var ranksDesc = []Rank{Ace, King, Queen, Jack, Ten, Nine, Eight, Seven, Six, Five, Four, Three, Two}
+var ranksDescAceLow = []Rank{King, Queen, Jack, Ten, Nine, Eight, Seven, Six, Five, Four, Three, Two, Ace}
 var allSuits = []Suit{Club, Diamond, Heart, Spade}
 
 func init() {
@@ -179,8 +180,8 @@ func classifyStraightFlush(cards []Card) (hl HandLevel, ok bool) {
 }
 
 // See if "four of a kind" can be formed from this set of cards. If so, return the level of the best such hand; if not, indicate invalid.
-func classifyFourOfAKind(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
-	for _, r := range ranksDesc {
+func classifyFourOfAKind(cards []Card, countsByRank []int, rankOrder []Rank) (hl HandLevel, ok bool) {
+	for _, r := range rankOrder {
 		if countsByRank[r] < 4 {
 			continue
 		}
@@ -254,8 +255,8 @@ func classifyStraight(cards []Card, countsByRank []int) (hl HandLevel, ok bool) 
 }
 
 // Can we build three-of-a-kind from this set of cards? If so, return the level, otherwise indicate failure.
-func classifyThreeOfAKind(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
-	for _, r := range ranksDesc {
+func classifyThreeOfAKind(cards []Card, countsByRank []int, rankOrder []Rank) (hl HandLevel, ok bool) {
+	for _, r := range rankOrder {
 		if countsByRank[r] < 3 {
 			continue
 		}
@@ -271,10 +272,10 @@ func classifyThreeOfAKind(cards []Card, countsByRank []int) (hl HandLevel, ok bo
 }
 
 // Can we get two pairs out of this set of cards? If so, return the level, otherwise indicate failure.
-func classifyTwoPair(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
+func classifyTwoPair(cards []Card, countsByRank []int, rankOrder []Rank) (hl HandLevel, ok bool) {
 	handRanks := make([]Rank, 3)
 	found := make([]bool, 3)
-	for _, r := range ranksDesc {
+	for _, r := range rankOrder {
 		switch countsByRank[r] {
 		case 1:
 			if found[2] {
@@ -300,8 +301,8 @@ func classifyTwoPair(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
 }
 
 // Can we get a one-pair out of this set of cards? If so, return the level, otherwise indicate failure.
-func classifyOnePair(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
-	for _, r := range ranksDesc {
+func classifyOnePair(cards []Card, countsByRank []int, rankOrder []Rank) (hl HandLevel, ok bool) {
+	for _, r := range rankOrder {
 		if countsByRank[r] == 2 {
 			handRanks := []Rank{r}
 			for _, c := range cards {
@@ -324,6 +325,14 @@ func classifyHighCard(cards []Card) HandLevel {
 	return HandLevel{HighCard, handRanks}
 }
 
+func rankCounts(cards []Card) []int {
+	countsByRank := make([]int, 13)
+	for _, c := range cards {
+		countsByRank[c.Rank]++
+	}
+	return countsByRank
+}
+
 // Classify a hand of five cards
 func ClassifyHand(cards []Card) HandLevel {
 	if len(cards) != 5 {
@@ -332,15 +341,11 @@ func ClassifyHand(cards []Card) HandLevel {
 	// First sort the cards, as this makes some of the functions easier to write
 	SortCards(cards, false)
 
-	countsByRank := make([]int, 13)
-	for _, c := range cards {
-		countsByRank[c.Rank]++
-	}
-
+	countsByRank := rankCounts(cards)
 	if result, ok := classifyStraightFlush(cards); ok {
 		return result
 	}
-	if result, ok := classifyFourOfAKind(cards, countsByRank); ok {
+	if result, ok := classifyFourOfAKind(cards, countsByRank, ranksDesc); ok {
 		return result
 	}
 	if result, ok := classifyFullHouse(cards, countsByRank); ok {
@@ -352,14 +357,54 @@ func ClassifyHand(cards []Card) HandLevel {
 	if result, ok := classifyStraight(cards, countsByRank); ok {
 		return result
 	}
-	if result, ok := classifyThreeOfAKind(cards, countsByRank); ok {
+	if result, ok := classifyThreeOfAKind(cards, countsByRank, ranksDesc); ok {
 		return result
 	}
-	if result, ok := classifyTwoPair(cards, countsByRank); ok {
+	if result, ok := classifyTwoPair(cards, countsByRank, ranksDesc); ok {
 		return result
 	}
-	if result, ok := classifyOnePair(cards, countsByRank); ok {
+	if result, ok := classifyOnePair(cards, countsByRank, ranksDesc); ok {
 		return result
 	}
 	return classifyHighCard(cards)
+}
+
+// Ace-to-five low classification is very similar to standard classification - we just ignore straights and flushes.
+func ClassifyAceToFiveLow(cards []Card) HandLevel {
+	if len(cards) != 5 {
+		panic(fmt.Sprintf("Expected exactly five cards, found %v", len(cards)))
+	}
+	// Sort ace-low
+	SortCards(cards, true)
+
+	countsByRank := rankCounts(cards)
+	if result, ok := classifyFourOfAKind(cards, countsByRank, ranksDescAceLow); ok {
+		return result
+	}
+	if result, ok := classifyFullHouse(cards, countsByRank); ok {
+		return result
+	}
+	if result, ok := classifyThreeOfAKind(cards, countsByRank, ranksDescAceLow); ok {
+		return result
+	}
+	if result, ok := classifyTwoPair(cards, countsByRank, ranksDescAceLow); ok {
+		return result
+	}
+	if result, ok := classifyOnePair(cards, countsByRank, ranksDescAceLow); ok {
+		return result
+	}
+	return classifyHighCard(cards)
+}
+
+// Determine whether one hand beats another using the ace-to-five low system.
+func BeatsAceToFiveLow(l1, l2 HandLevel) bool {
+	if l1.Class != l2.Class {
+		return l1.Class < l2.Class
+	}
+	for i := 0; i < len(l1.Tiebreaks) && i < len(l2.Tiebreaks); i++ {
+		if l1.Tiebreaks[i] != l2.Tiebreaks[i] {
+			return IsRankLess(l1.Tiebreaks[i], l2.Tiebreaks[i], true)
+		}
+	}
+	return false
 }
