@@ -58,6 +58,7 @@ func lowLevelQualifies(level poker.HandLevel) bool {
 
 type Omaha8Level struct {
 	HighLevel, LowLevel poker.HandLevel
+	HighHand, LowHand   []poker.Card
 	LowLevelQualifies   bool
 }
 
@@ -65,20 +66,24 @@ type Omaha8Level struct {
 func classify(tableCards, holeCards []poker.Card) Omaha8Level {
 	possibleCombinations := makePossibleCombinations(tableCards, holeCards)
 
-	bestHighLevel := poker.ClassifyHand(possibleCombinations[0])
-	bestLowLevel := poker.ClassifyAceToFiveLow(possibleCombinations[0])
+	bestHighHand := possibleCombinations[0]
+	bestHighLevel := poker.ClassifyHand(bestHighHand)
+	bestLowHand := bestHighHand
+	bestLowLevel := poker.ClassifyAceToFiveLow(bestLowHand)
 
 	for i := 1; i < len(possibleCombinations); i++ {
 		highLevel := poker.ClassifyHand(possibleCombinations[i])
 		if poker.Beats(highLevel, bestHighLevel) {
+			bestHighHand = possibleCombinations[i]
 			bestHighLevel = highLevel
 		}
 
 		lowLevel := poker.ClassifyAceToFiveLow(possibleCombinations[i])
 		if poker.BeatsAceToFiveLow(lowLevel, bestLowLevel) {
+			bestLowHand = possibleCombinations[i]
 			bestLowLevel = lowLevel
 		}
 	}
 
-	return Omaha8Level{bestHighLevel, bestLowLevel, lowLevelQualifies(bestLowLevel)}
+	return Omaha8Level{bestHighLevel, bestLowLevel, bestHighHand, bestLowHand, lowLevelQualifies(bestLowLevel)}
 }

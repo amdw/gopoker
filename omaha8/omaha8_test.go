@@ -61,47 +61,42 @@ func TestDeal(t *testing.T) {
 }
 
 type classifyTest struct {
-	tableCards, holeCards []poker.Card
-	expectedLevel         Omaha8Level
-}
-
-func o8l(highLevel, lowLevel poker.HandLevel) Omaha8Level {
-	return Omaha8Level{highLevel, lowLevel, true}
-}
-
-func o8lh(highLevel poker.HandLevel) Omaha8Level {
-	result := Omaha8Level{}
-	result.HighLevel = highLevel
-	result.LowLevelQualifies = false
-	return result
+	tableCards, holeCards               []poker.Card
+	expectedHighLevel, expectedLowLevel poker.HandLevel
+	expectedLowQualifies                bool
 }
 
 var h = poker.TestMakeHand
 var hl = poker.TestMakeHandLevel
 var board = h("2S", "5C", "10H", "7D", "8C")
 var classifyTests = []classifyTest{
-	{board, h("AS", "4S", "5H", "KC"), o8l(hl("OnePair", "5", "A", "10", "8"), hl("HighCard", "7", "5", "4", "2", "A"))},
-	{board, h("AH", "3H", "10S", "10C"), o8l(hl("ThreeOfAKind", "10", "8", "7"), hl("HighCard", "7", "5", "3", "2", "A"))},
-	{board, h("7C", "9C", "JS", "QS"), o8lh(hl("Straight", "J"))},
-	{board, h("4H", "6H", "KS", "KD"), o8l(hl("Straight", "8"), hl("HighCard", "7", "6", "5", "4", "2"))},
-	{board, h("AD", "3D", "6D", "9H"), o8l(hl("Straight", "10"), hl("HighCard", "7", "5", "3", "2", "A"))},
-}
-
-func levelsEqual(l1, l2 Omaha8Level) bool {
-	if reflect.DeepEqual(l1, l2) {
-		return true
-	}
-	if !l1.LowLevelQualifies && !l2.LowLevelQualifies {
-		return reflect.DeepEqual(l1.HighLevel, l2.HighLevel)
-	}
-	return false
+	{board, h("AS", "4S", "5H", "KC"), hl("OnePair", "5", "A", "10", "8"), hl("HighCard", "7", "5", "4", "2", "A"), true},
+	{board, h("AH", "3H", "10S", "10C"), hl("ThreeOfAKind", "10", "8", "7"), hl("HighCard", "7", "5", "3", "2", "A"), true},
+	{board, h("7C", "9C", "JS", "QS"), hl("Straight", "J"), hl("HighCard", "9", "8", "7", "5", "2"), false},
+	{board, h("4H", "6H", "KS", "KD"), hl("Straight", "8"), hl("HighCard", "7", "6", "5", "4", "2"), true},
+	{board, h("AD", "3D", "6D", "9H"), hl("Straight", "10"), hl("HighCard", "7", "5", "3", "2", "A"), true},
 }
 
 func TestClassify(t *testing.T) {
 	for _, test := range classifyTests {
 		level := classify(test.tableCards, test.holeCards)
-		if !levelsEqual(level, test.expectedLevel) {
-			t.Errorf("Expected level %q with board %q and hole cards %q, found %q", test.expectedLevel, test.tableCards, test.holeCards, level)
+		if !reflect.DeepEqual(level.HighLevel, test.expectedHighLevel) {
+			t.Errorf("Expected high level %q with board %q and hole cards %q, found %q", test.expectedHighLevel, test.tableCards, test.holeCards, level.HighLevel)
+		}
+		if !reflect.DeepEqual(level.LowLevel, test.expectedLowLevel) {
+			t.Errorf("Expected low level %q with board %q and hole cards %q, found %q", test.expectedLowLevel, test.tableCards, test.holeCards, level.LowLevel)
+		}
+		if level.LowLevelQualifies != test.expectedLowQualifies {
+			t.Errorf("Expected low level qualifies = %v with board %q and hole cards %q, found %v (%q)", test.expectedLowQualifies, test.tableCards, test.holeCards, level.LowLevelQualifies, level.LowLevel)
+		}
+
+		hl := poker.ClassifyHand(level.HighHand)
+		if !reflect.DeepEqual(test.expectedHighLevel, hl) {
+			t.Errorf("Expected high hand to classify as %q, found %q (%q)", test.expectedHighLevel, hl, level.HighHand)
+		}
+		ll := poker.ClassifyAceToFiveLow(level.LowHand)
+		if !reflect.DeepEqual(test.expectedLowLevel, ll) {
+			t.Errorf("Expected low hand to classify as %q, found %q (%q)", test.expectedLowLevel, ll, level.LowHand)
 		}
 	}
 }
