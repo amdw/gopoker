@@ -1,5 +1,5 @@
 /*
-Copyright 2013 Andrew Medworth
+Copyright 2013, 2015, 2017 Andrew Medworth
 
 This file is part of Gopoker, a set of miscellaneous poker-related functions
 written in the Go programming language (http://golang.org).

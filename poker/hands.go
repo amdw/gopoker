@@ -1,5 +1,5 @@
 /*
-Copyright 2013 Andrew Medworth
+Copyright 2013, 2015, 2017 Andrew Medworth
 
 This file is part of Gopoker, a set of miscellaneous poker-related functions
 written in the Go programming language (http://golang.org).
@@ -16,8 +16,6 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with Gopoker.  If not, see <http://www.gnu.org/licenses/>.
-
-This file contains code dealing with basic rules of poker: hand rankings, classifications and so forth.
 */
 package poker
 
