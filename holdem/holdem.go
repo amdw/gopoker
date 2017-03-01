@@ -26,7 +26,7 @@ import (
 	"sort"
 )
 
-func Classify(holeCards, tableCards []poker.Card) (poker.HandLevel, []poker.Card) {
+func classify(tableCards, holeCards []poker.Card) (poker.HandLevel, []poker.Card) {
 	allCards := make([]poker.Card, 7)
 	copy(allCards, holeCards)
 	copy(allCards[2:], tableCards)
@@ -121,7 +121,7 @@ func Deal(p *poker.Pack, players int) (onTable []poker.Card, playerCards [][]pok
 func DealOutcomes(onTable []poker.Card, playerCards [][]poker.Card) []PlayerOutcome {
 	outcomes := make([]PlayerOutcome, len(playerCards))
 	for playerIdx, hand := range playerCards {
-		level, cards := Classify(hand, onTable)
+		level, cards := classify(onTable, hand)
 		outcomes[playerIdx] = PlayerOutcome{playerIdx + 1, level, cards}
 	}
 	sortOutcomes(outcomes)
