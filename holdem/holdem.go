@@ -22,7 +22,6 @@ package holdem
 import (
 	"fmt"
 	"github.com/amdw/gopoker/poker"
-	"math/rand"
 	"sort"
 )
 
@@ -103,48 +102,4 @@ func calcPotFraction(won bool, potSplit int) float64 {
 	} else {
 		return 0
 	}
-}
-
-func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) *poker.HandOutcome {
-	// This works even if player 1 was equal first, since equal hands are sorted by player
-	won := outcomes[0].Player == 1
-
-	var ourOutcome PlayerOutcome
-	opponentOutcomes := make([]PlayerOutcome, len(outcomes)-1)
-	potSplit := 0
-	i := 0
-	for _, o := range outcomes {
-		if o.Player == 1 {
-			ourOutcome = o
-		} else {
-			opponentOutcomes[i] = o
-			i++
-		}
-		if !poker.Beats(outcomes[0].Level, o.Level) {
-			// The best hand doesn't beat this hand so it must be a winner
-			potSplit++
-		}
-	}
-
-	bestOpponentWon := !poker.Beats(ourOutcome.Level, opponentOutcomes[0].Level)
-
-	randomOpponentIdx := randGen.Intn(len(opponentOutcomes))
-	randomOpponentLevel := opponentOutcomes[randomOpponentIdx].Level
-	randomOpponentWon := !poker.Beats(outcomes[0].Level, randomOpponentLevel)
-
-	potFractionWon := calcPotFraction(won, potSplit)
-	bestOpponentPotFraction := calcPotFraction(bestOpponentWon, potSplit)
-	randomOpponentPotFraction := calcPotFraction(randomOpponentWon, potSplit)
-
-	return &poker.HandOutcome{won, bestOpponentWon, randomOpponentWon,
-		potFractionWon, bestOpponentPotFraction, randomOpponentPotFraction,
-		ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel}
-}
-
-// Play out one hand of Texas Hold'em and return whether or not player 1 won,
-// plus player 1's hand level, plus the best hand level of any of player 1's opponents.
-func SimulateOneHoldemHand(p *poker.Pack, players int, randGen *rand.Rand) *poker.HandOutcome {
-	onTable, playerCards := Deal(p, players)
-	outcomes := DealOutcomes(onTable, playerCards)
-	return calcHandOutcome(outcomes, randGen)
 }
