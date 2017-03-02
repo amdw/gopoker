@@ -28,6 +28,20 @@ import (
 	"strings"
 )
 
+func duplicateCheck(tableCards, yourCards []poker.Card) (ok bool, dupeCard poker.Card) {
+	allCards := make([]poker.Card, len(yourCards)+len(tableCards))
+	copy(allCards, yourCards)
+	copy(allCards[len(yourCards):], tableCards)
+	cardDupeCheck := make(map[string]int)
+	for _, c := range allCards {
+		cardDupeCheck[c.String()]++
+		if cardDupeCheck[c.String()] > 1 {
+			return false, c
+		}
+	}
+	return true, poker.Card{}
+}
+
 type simulationParams struct {
 	players               int
 	tableCards, yourCards []poker.Card

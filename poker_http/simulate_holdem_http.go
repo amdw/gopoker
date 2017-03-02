@@ -38,27 +38,6 @@ const tableCardsKey = "table"
 const simCountKey = "simcount"
 const forceComputeKey = "compute"
 
-func summariseCards(cards []poker.Card) string {
-	if len(cards) == 0 {
-		return "empty"
-	}
-	return formatCards(cards)
-}
-
-func duplicateCheck(tableCards, yourCards []poker.Card) (ok bool, dupeCard poker.Card) {
-	allCards := make([]poker.Card, len(yourCards)+len(tableCards))
-	copy(allCards, yourCards)
-	copy(allCards[len(yourCards):], tableCards)
-	cardDupeCheck := make(map[string]int)
-	for _, c := range allCards {
-		cardDupeCheck[c.String()]++
-		if cardDupeCheck[c.String()] > 1 {
-			return false, c
-		}
-	}
-	return true, poker.Card{}
-}
-
 func printResultGraph(w http.ResponseWriter, title string, handNames []string, series []map[string]interface{}, id string) {
 	graphDef := map[string]interface{}{
 		"chart":       map[string]string{"type": "column"},
