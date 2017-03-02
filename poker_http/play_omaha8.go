@@ -100,10 +100,10 @@ func PlayOmaha8(w http.ResponseWriter, req *http.Request) {
 		}
 		printTickCell(w, outcome.IsLowWinner)
 		fracClass := ""
-		if outcome.PotFractionWon == 0 {
+		if outcome.PotFractionWon() == 0 {
 			fracClass = " nothing"
 		}
-		fmt.Fprintf(w, `<td class="numcell%v">%.1f%%</td>`, fracClass, 100*outcome.PotFractionWon)
+		fmt.Fprintf(w, `<td class="numcell%v">%.1f%%</td>`, fracClass, 100*outcome.PotFractionWon())
 		fmt.Fprintln(w, "</tr>")
 	}
 

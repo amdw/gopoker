@@ -45,6 +45,15 @@ func (p *Pack) Shuffle(randGen *rand.Rand) {
 	}
 }
 
+func (p *Pack) IndexOf(card Card) int {
+	for i, c := range p.Cards {
+		if c == card {
+			return i
+		}
+	}
+	return -1
+}
+
 func NewPack() Pack {
 	var result Pack
 	result.initialise()

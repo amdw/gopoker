@@ -126,12 +126,16 @@ func (s *Simulator) ProcessHand(outcome *HandOutcome) {
 	}
 }
 
-// Calculate the largest bet which would have a positive expected value, relative to the size of the pot.
 func (s *Simulator) PotOddsBreakEven() float64 {
+	return PotOddsBreakEven(s.PotsWon, s.HandCount)
+}
+
+// Calculate the largest bet which would have a positive expected value, relative to the size of the pot.
+func PotOddsBreakEven(totalPotsWon float64, handCount int) float64 {
 	// If W is the mean number of pots won, then:
 	// Expected value of bet = W * (size of pot + bet size) - bet size
 	// This is positive iff bet size < size of pot * W / (1 - W)
-	meanPotsWon := s.PotsWon / float64(s.HandCount)
+	meanPotsWon := totalPotsWon / float64(handCount)
 	if meanPotsWon == 1.0 {
 		return math.Inf(1)
 	}

@@ -191,8 +191,8 @@ func TestPlayerOutcomes(t *testing.T) {
 			if test.expectedLowWinners[i] != outcome.IsLowWinner {
 				t.Errorf("Expected low winner = %v for player @ %v, found %v on board %q hands %q", test.expectedLowWinners[i], i, outcome.IsLowWinner, test.tableCards, test.playerCards)
 			}
-			if math.Abs(test.expectedPotSplit[i]-outcome.PotFractionWon) > 1e-6 {
-				t.Errorf("Expected pot split %v for player @ %v on board %q hand %q, found %v", test.expectedPotSplit[i], i, test.tableCards, test.playerCards, outcome.PotFractionWon)
+			if math.Abs(test.expectedPotSplit[i]-outcome.PotFractionWon()) > 1e-6 {
+				t.Errorf("Expected pot split %v for player @ %v on board %q hand %q, found %v", test.expectedPotSplit[i], i, test.tableCards, test.playerCards, outcome.PotFractionWon())
 			}
 		}
 	}

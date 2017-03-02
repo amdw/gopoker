@@ -27,108 +27,17 @@ import (
 	"testing"
 )
 
-func assertPotsWonSanity(winCount int, potsWon float64, description string, t *testing.T) {
-	if potsWon > float64(winCount) || potsWon < 0 || (winCount > 0 && math.Abs(potsWon) < 1e-6) {
-		t.Errorf("Illogical pot win total %v for %v (win count %v)", potsWon, description, winCount)
-	}
-}
-
-func assertSimSanity(sim *poker.Simulator, players, simulations int, t *testing.T) {
-	if sim.Players != players {
-		t.Errorf("Expected %v players, found %v", players, sim.Players)
-	}
-	if sim.HandCount != simulations {
-		t.Errorf("Expected %v found %v for HandCount", simulations, sim.HandCount)
-	}
-	if sim.WinCount < 0 || sim.WinCount > simulations {
-		t.Errorf("Illogical win count %v", sim.WinCount)
-	}
-	assertPotsWonSanity(sim.WinCount, sim.PotsWon, "us", t)
-	assertPotsWonSanity(sim.BestOpponentWinCount, sim.BestOpponentPotsWon, "best opponent", t)
-	assertPotsWonSanity(sim.RandomOpponentWinCount, sim.RandomOpponentPotsWon, "random opponent", t)
-	if sim.PotsWon+sim.BestOpponentPotsWon > float64(simulations) {
-		t.Errorf("More pots won than there were simulated hands: %v+%v vs %v", sim.PotsWon, sim.BestOpponentPotsWon, simulations)
-	}
-	betBreakEven := sim.PotOddsBreakEven()
-	if betBreakEven < 0 || math.IsInf(betBreakEven, -1) || math.IsNaN(betBreakEven) {
-		t.Errorf("Illogical pot odds break-even point: %v", betBreakEven)
-	}
-	checkCounts := func(counts []int, shouldSumToSims bool, name string) int {
-		if len(counts) != int(poker.MAX_HANDCLASS) {
-			t.Errorf("Expected %v %v, found %v", poker.MAX_HANDCLASS, name, len(counts))
-		}
-		sum := 0
-		for i, c := range counts {
-			if c < 0 || c > simulations {
-				t.Errorf("Insane value %v at %v of %v", c, i, name)
-			}
-			sum += c
-		}
-		if sum > simulations {
-			t.Errorf("Insane sum %v for %v", sum, name)
-		}
-		if shouldSumToSims && sum != simulations {
-			t.Errorf("Expected sum %v for %v, found %v", simulations, name, sum)
-		}
-		return sum
-	}
-	checkCounts(sim.OurClassCounts, true, "OurClassCounts")
-	checkCounts(sim.BestOpponentClassCounts, true, "BestOpponentClassCounts")
-	checkCounts(sim.RandomOpponentClassCounts, true, "RandomOpponentClassCounts")
-	ourWins := checkCounts(sim.ClassWinCounts, false, "ClassWinCounts")
-	jointWins := checkCounts(sim.ClassJointWinCounts, false, "ClassJointWinCounts")
-	bestOppWins := checkCounts(sim.ClassBestOppWinCounts, false, "ClassBestOppWinCounts")
-	if ourWins != sim.WinCount {
-		t.Errorf("Class win counts should sum to %v, found %v", sim.WinCount, ourWins)
-	}
-	if jointWins != sim.JointWinCount {
-		t.Errorf("Class joint win counts should sum to %v, found %v", sim.JointWinCount, jointWins)
-	}
-	if bestOppWins != sim.BestOpponentWinCount {
-		t.Errorf("Best opponent win counts should sum to %v, found %v", sim.BestOpponentWinCount, bestOppWins)
-	}
-	if ourWins+bestOppWins-sim.JointWinCount != simulations {
-		t.Errorf("Our wins (%v) and opponent wins (%v) minus joint wins (%v) sum to %v, expected %v", ourWins, bestOppWins, sim.JointWinCount, ourWins+bestOppWins-sim.JointWinCount, simulations)
-	}
-	randOppWins := checkCounts(sim.ClassRandOppWinCounts, false, "ClassRandOppWinCounts")
-	if randOppWins != sim.RandomOpponentWinCount {
-		t.Errorf("Random opponent wins %v but classes sum to %v", sim.RandomOpponentWinCount, randOppWins)
-	}
-	if randOppWins > bestOppWins {
-		t.Errorf("Random opponent won more than best opponent (%v vs %v)", randOppWins, bestOppWins)
-	}
-
-	for c, l := range sim.ClassBestHands {
-		if poker.Beats(l, sim.BestHand) {
-			t.Errorf("Best hand %v of class %v better than overall best %v", l, c, sim.BestHand)
-		}
-	}
-	for c, l := range sim.ClassBestOppHands {
-		if poker.Beats(l, sim.BestOppHand) {
-			t.Errorf("Best opponent hand %v of class %v better than overall best %v", l, c, sim.BestOppHand)
-		}
-	}
-	checkTiebreaks := func(tbs []poker.Rank, name string) {
-		if len(tbs) != 5 {
-			t.Errorf("Expected 5 tiebreaks for %v, found %v", name, len(tbs))
-		}
-	}
-	// Catches error with best-hand zero value
-	checkTiebreaks(sim.ClassBestHands[poker.HighCard].Tiebreaks, "high-card best hands")
-	checkTiebreaks(sim.ClassBestOppHands[poker.HighCard].Tiebreaks, "high-card opponent best hands")
-}
-
 func TestSimSanity(t *testing.T) {
 	players := 5
 	simulations := 10000
 	sim := SimulateHoldem([]poker.Card{}, []poker.Card{}, players, simulations)
-	assertSimSanity(sim, players, simulations, t)
+	poker.TestAssertSimSanity(sim, players, simulations, t)
 }
 
 func TestTwoPlayers(t *testing.T) {
 	simulations := 10000
 	sim := SimulateHoldem([]poker.Card{}, []poker.Card{}, 2, simulations)
-	assertSimSanity(sim, 2, simulations, t)
+	poker.TestAssertSimSanity(sim, 2, simulations, t)
 	// We can make some extra assertions here, as it's impossible for a pot to be split among opponents
 	totalPotsWon := sim.PotsWon + sim.BestOpponentPotsWon
 	if math.Abs(totalPotsWon-float64(simulations)) > 1e-6 {
@@ -146,7 +55,7 @@ func TestEnumeration(t *testing.T) {
 	sim := SimulateHoldem(tableCards, yourCards, 2, 10000)
 
 	// Should only do 45C2 = 990 simulations, one for each possible hand our opponent holds
-	assertSimSanity(sim, 2, 990, t)
+	poker.TestAssertSimSanity(sim, 2, 990, t)
 
 	if sim.OurClassCounts[poker.TwoPair] != 990 {
 		t.Errorf("We got two pair but got %v not 990!", sim.OurClassCounts[poker.TwoPair])
@@ -281,10 +190,10 @@ func TestFixedShuffle(t *testing.T) {
 	for testNum := 0; testNum < 1000; testNum++ {
 		shuffleFixing(&pack, tableCards, myCards, randGen)
 		tCards, pCards := Deal(&pack, 5)
-		if !cardsEqual(tableCards, tCards) {
+		if !poker.CardsEqual(tableCards, tCards) {
 			t.Errorf("Expected table cards %q, found %q", tableCards, tCards)
 		}
-		if !cardsEqual(myCards, pCards[0]) {
+		if !poker.CardsEqual(myCards, pCards[0]) {
 			t.Errorf("Expected player 1 cards %q, found %q", myCards, pCards[0])
 		}
 		containsAny := func(cards, testCards []poker.Card) bool {
@@ -327,6 +236,6 @@ func TestPairs(t *testing.T) {
 	simCount := 1000
 	for _, pair := range pairs {
 		sim := pair.RunSimulation(players, simCount)
-		assertSimSanity(sim, players, simCount, t)
+		poker.TestAssertSimSanity(sim, players, simCount, t)
 	}
 }

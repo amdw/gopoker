@@ -118,25 +118,14 @@ func shuffleFixing(p *poker.Pack, tableCards, yourCards []poker.Card, randGen *r
 		panic(fmt.Sprintf("Maximum of 5 table cards and 2 hole cards supported, found %v and %v", len(tableCards), len(yourCards)))
 	}
 
-	indexOf := func(cards [52]poker.Card, card poker.Card) int {
-		result := -1
-		for i, c := range cards {
-			if c == card {
-				result = i
-				break
-			}
-		}
-		return result
-	}
-
 	// Just shuffle the pack and then swap the fixed cards into place from wherever they are in the deck
 	p.Shuffle(randGen)
 	for i := 0; i < len(tableCards); i++ {
-		swapIdx := indexOf(p.Cards, tableCards[i])
+		swapIdx := p.IndexOf(tableCards[i])
 		p.Cards[i], p.Cards[swapIdx] = p.Cards[swapIdx], p.Cards[i]
 	}
 	for i := 0; i < len(yourCards); i++ {
-		swapIdx := indexOf(p.Cards, yourCards[i])
+		swapIdx := p.IndexOf(yourCards[i])
 		targetIdx := i + 5
 		p.Cards[targetIdx], p.Cards[swapIdx] = p.Cards[swapIdx], p.Cards[targetIdx]
 	}

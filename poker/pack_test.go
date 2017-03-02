@@ -30,3 +30,26 @@ func TestShuffle(t *testing.T) {
 	pack.Shuffle(randGen)
 	TestPackPermutation(&pack, t)
 }
+
+func TestIndexOf(t *testing.T) {
+	pack := NewPack()
+	randGen := rand.New(rand.NewSource(1234)) // Deterministic for predictable tests
+	tests := 1000
+
+	card := C("AS")
+	randCheck := make(map[int]int)
+	checkLimit := 10
+	for i := 0; i < tests; i++ {
+		pack.Shuffle(randGen)
+		idx := pack.IndexOf(card)
+		if pack.Cards[idx] != card {
+			t.Errorf("Expected %v at %v but found %v", card, idx, pack.Cards[idx])
+		}
+		if len(randCheck) < checkLimit {
+			randCheck[idx]++
+		}
+	}
+	if len(randCheck) < checkLimit {
+		t.Errorf("Suspicious lack of randomness - only indices found: %q", randCheck)
+	}
+}

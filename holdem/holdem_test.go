@@ -35,12 +35,6 @@ func levelsEqual(l1, l2 poker.HandLevel) bool {
 	return reflect.DeepEqual(l1, l2)
 }
 
-func cardsEqual(c1, c2 []poker.Card) bool {
-	poker.SortCards(c1, false)
-	poker.SortCards(c2, false)
-	return reflect.DeepEqual(c1, c2)
-}
-
 type classificationTest struct {
 	HandCards     []poker.Card
 	TableCards    []poker.Card
@@ -84,7 +78,7 @@ func TestClassification(t *testing.T) {
 		if !reflect.DeepEqual(test.ExpectedLevel, level) {
 			t.Errorf("Test @%v: expected level %v, found %v (hand %q table %q)", i, test.ExpectedLevel, level, test.HandCards, test.TableCards)
 		}
-		if !cardsEqual(test.ExpectedCards, cards) {
+		if !poker.CardsEqual(test.ExpectedCards, cards) {
 			t.Errorf("Test @%v: expected cards %v, found %v (hand %q table %q)", i, test.ExpectedCards, cards, test.HandCards, test.TableCards)
 		}
 	}
@@ -174,7 +168,7 @@ func TestDealOutcomes(t *testing.T) {
 			if !reflect.DeepEqual(expectedOutcome.Level, outcome.Level) {
 				t.Errorf("Expected level %q at position %v, found %q", expectedOutcome.Level, i, outcome.Level)
 			}
-			if !cardsEqual(expectedOutcome.Cards, outcome.Cards) {
+			if !poker.CardsEqual(expectedOutcome.Cards, outcome.Cards) {
 				t.Errorf("Expected cards %q at position %v, found %q", expectedOutcome.Cards, i, outcome.Cards)
 			}
 			if expectedOutcome.Won != outcome.Won {
