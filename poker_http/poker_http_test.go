@@ -29,6 +29,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -44,6 +45,26 @@ func TestPlayHoldem(t *testing.T) {
 	PlayHoldem(rec, req)
 	if rec.Code != 200 {
 		t.Errorf("Got HTTP error %s", rec.Code)
+	}
+	contentType := rec.Result().Header["Content-Type"]
+	if !reflect.DeepEqual([]string{"text/html; charset=utf-8"}, contentType) {
+		t.Errorf("Expected HTML response, found %v", contentType)
+	}
+}
+
+func TestPlayHoldemBadPlayers(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", fmt.Sprintf("%v/holdem/play?players=wibble", baseUrl), nil)
+	if err != nil {
+		t.Fatalf("Could not generate HTTP request: %v", err)
+	}
+	PlayHoldem(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("Expected HTTP status %v, got %v", http.StatusBadRequest, rec.Code)
+	}
+	contentType := rec.Result().Header["Content-Type"]
+	if !reflect.DeepEqual([]string{"text/plain; charset=utf-8"}, contentType) {
+		t.Errorf("Expected plain-text response, found %v", contentType)
 	}
 }
 

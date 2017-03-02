@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"github.com/amdw/gopoker/holdem"
 	"github.com/amdw/gopoker/poker"
-	"html/template"
 	"math/rand"
 	"net/http"
 	"time"
@@ -31,16 +30,15 @@ import (
 
 func PlayHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
+	players, err := getPlayers(req)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error getting player count: %v", err), http.StatusBadRequest)
+		return
+	}
+
 	fmt.Fprintln(w, "<html><head><title>A game of Texas Hold'em</title>")
 	fmt.Fprintln(w, `<meta name="viewport" content="width=device-width, initial-scale=1">`)
 	fmt.Fprintln(w, "</head><body><h1>A game of Texas Hold'em</h1>")
-	players, err := getPlayers(req)
-	if err != nil {
-		// Use template to sanitise user input for security
-		t := template.Must(template.New("error").Parse("<p>Could not parse players as integer: {{.}}</p></body></html>"))
-		t.Execute(w, err.Error())
-		return
-	}
 
 	fmt.Fprintf(w, `<form method="get">Players: <input type="text" name="%v" value="%v"/><input type="submit" value="Rerun"/></form>`, playersKey, players)
 
