@@ -58,3 +58,16 @@ func TestPlayOmaha8ErrorHandling(t *testing.T) {
 		t.Errorf("Expected plain-text response, found %v", contentType)
 	}
 }
+
+func TestOmaha8Simulation(t *testing.T) {
+	dir := setupSimStaticAssets(t)
+	defer os.RemoveAll(dir)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", fmt.Sprintf("%v/omaha8/simulate", baseUrl), nil)
+	if err != nil {
+		t.Fatalf("Could not generate HTTP request: %v", err)
+	}
+	SimulateOmaha8(rec, req)
+	assertOkHtml(rec, t)
+}
