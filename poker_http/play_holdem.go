@@ -25,8 +25,23 @@ import (
 	"github.com/amdw/gopoker/poker"
 	"math/rand"
 	"net/http"
+	"sort"
 	"time"
 )
+
+func sortOutcomes(outcomes []holdem.PlayerOutcome) {
+	sort.Slice(outcomes, func(i, j int) bool {
+		iBeatsJ := poker.Beats(outcomes[i].Level, outcomes[j].Level)
+		jBeatsI := poker.Beats(outcomes[j].Level, outcomes[i].Level)
+		if iBeatsJ && !jBeatsI {
+			return true
+		}
+		if jBeatsI && !iBeatsJ {
+			return false
+		}
+		return outcomes[i].Player < outcomes[j].Player
+	})
+}
 
 func PlayHoldem(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
@@ -46,7 +61,8 @@ func PlayHoldem(w http.ResponseWriter, req *http.Request) {
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 	pack.Shuffle(randGen)
 	onTable, playerCards := holdem.Deal(&pack, players)
-	sortedOutcomes := holdem.DealOutcomes(onTable, playerCards)
+	outcomes := holdem.DealOutcomes(onTable, playerCards)
+	sortOutcomes(outcomes)
 	fmt.Fprintf(w, "<h2>Table cards</h2><p>%v</p>", formatCards(onTable))
 	fmt.Fprintf(w, "<h2>Player cards</h2><ul>")
 	for player := 0; player < players; player++ {
@@ -54,7 +70,7 @@ func PlayHoldem(w http.ResponseWriter, req *http.Request) {
 	}
 	fmt.Fprintf(w, "</ul>")
 	fmt.Fprintf(w, "<h2>Results</h2><table><tr><th>Position</th><th>Player</th><th>Hand</th><th>Cards</th></tr>")
-	for i, outcome := range sortedOutcomes {
+	for i, outcome := range outcomes {
 		fmt.Fprintf(w, "<tr><td>%v</td><td>%v</td><td>%v</td><td>%v</td></tr>", i+1, outcome.Player, outcome.Level.PrettyPrint(), formatCards(outcome.Cards))
 	}
 	fmt.Fprintf(w, "</table>")

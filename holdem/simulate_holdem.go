@@ -81,39 +81,26 @@ func enumerateHoldem(s *poker.Simulator, tableCards, yourCards []poker.Card, pla
 }
 
 func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) *poker.HandOutcome {
-	// This works even if player 1 was equal first, since equal hands are sorted by player
-	won := outcomes[0].Player == 1
+	if len(outcomes) < 2 {
+		panic(fmt.Sprintf("Expected at least two players, found %v", len(outcomes)))
+	}
+	ourOutcome := outcomes[0]
+	if ourOutcome.Player != 1 {
+		panic(fmt.Sprintf("Expected player 1 outcome first, found %v", ourOutcome.Player))
+	}
 
-	var ourOutcome PlayerOutcome
-	opponentOutcomes := make([]PlayerOutcome, len(outcomes)-1)
-	potSplit := 0
-	i := 0
-	for _, o := range outcomes {
-		if o.Player == 1 {
-			ourOutcome = o
-		} else {
-			opponentOutcomes[i] = o
-			i++
-		}
-		if !poker.Beats(outcomes[0].Level, o.Level) {
-			// The best hand doesn't beat this hand so it must be a winner
-			potSplit++
+	var bestOpponentOutcome PlayerOutcome
+	for i := 1; i < len(outcomes); i++ {
+		if i == 1 || poker.Beats(outcomes[i].Level, bestOpponentOutcome.Level) {
+			bestOpponentOutcome = outcomes[i]
 		}
 	}
 
-	bestOpponentWon := !poker.Beats(ourOutcome.Level, opponentOutcomes[0].Level)
+	randomOpponentOutcome := outcomes[1+randGen.Intn(len(outcomes)-1)]
 
-	randomOpponentIdx := randGen.Intn(len(opponentOutcomes))
-	randomOpponentLevel := opponentOutcomes[randomOpponentIdx].Level
-	randomOpponentWon := !poker.Beats(outcomes[0].Level, randomOpponentLevel)
-
-	potFractionWon := calcPotFraction(won, potSplit)
-	bestOpponentPotFraction := calcPotFraction(bestOpponentWon, potSplit)
-	randomOpponentPotFraction := calcPotFraction(randomOpponentWon, potSplit)
-
-	return &poker.HandOutcome{won, bestOpponentWon, randomOpponentWon,
-		potFractionWon, bestOpponentPotFraction, randomOpponentPotFraction,
-		ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel}
+	return &poker.HandOutcome{ourOutcome.Won, bestOpponentOutcome.Won, randomOpponentOutcome.Won,
+		ourOutcome.PotFractionWon, bestOpponentOutcome.PotFractionWon, randomOpponentOutcome.PotFractionWon,
+		ourOutcome.Level, bestOpponentOutcome.Level, randomOpponentOutcome.Level}
 }
 
 // Play out one hand of Texas Hold'em and return whether or not player 1 won,

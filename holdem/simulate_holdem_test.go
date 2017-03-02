@@ -272,38 +272,6 @@ func TestHandOutcomeSanity(t *testing.T) {
 	}
 }
 
-func TestSharedPot(t *testing.T) {
-	winOutcome := PlayerOutcome{1, hl("Straight", "8"), []poker.Card{}}
-	loseOutcome := PlayerOutcome{1, hl("TwoPair", "8", "6", "2"), []poker.Card{}}
-	rng := rand.New(rand.NewSource(1234))
-	for split := 1; split < 10; split++ {
-		outcomes := make([]PlayerOutcome, 10)
-		for i := 0; i < split; i++ {
-			winOutcome.Player = i + 1
-			outcomes[i] = winOutcome
-		}
-		for i := split; i < len(outcomes); i++ {
-			loseOutcome.Player = i + 1
-			outcomes[i] = loseOutcome
-		}
-		res := calcHandOutcome(outcomes, rng)
-		expectedWin := 1.0 / float64(split)
-		expectedOpponentWin := 0.0
-		if split > 1 {
-			expectedOpponentWin = expectedWin
-		}
-		if math.Abs(res.PotFractionWon-expectedWin) > 1e-6 {
-			t.Errorf("Expected %v-way split to win %v of pot, found %v", split, expectedWin, res.PotFractionWon)
-		}
-		if math.Abs(res.BestOpponentPotFractionWon-expectedOpponentWin) > 1e-6 {
-			t.Errorf("Expected %v-way split to win best opponent %v of pot, found %v", split, expectedOpponentWin, res.BestOpponentPotFractionWon)
-		}
-		if res.RandomOpponentPotFractionWon != 0 && math.Abs(res.RandomOpponentPotFractionWon-expectedOpponentWin) > 1e-6 {
-			t.Errorf("Expected %v-way split to give random opponent nothing or %v of pot, found %v", split, expectedOpponentWin, res.RandomOpponentPotFractionWon)
-		}
-	}
-}
-
 func TestFixedShuffle(t *testing.T) {
 	pack := poker.NewPack()
 	randGen := rand.New(rand.NewSource(1234)) // Deterministic for repeatable tests

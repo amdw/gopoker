@@ -22,7 +22,6 @@ package holdem
 import (
 	"fmt"
 	"github.com/amdw/gopoker/poker"
-	"sort"
 )
 
 func classify(tableCards, holeCards []poker.Card) (poker.HandLevel, []poker.Card) {
@@ -49,23 +48,11 @@ func classify(tableCards, holeCards []poker.Card) (poker.HandLevel, []poker.Card
 }
 
 type PlayerOutcome struct {
-	Player int
-	Level  poker.HandLevel
-	Cards  []poker.Card
-}
-
-func sortOutcomes(outcomes []PlayerOutcome) {
-	sort.Slice(outcomes, func(i, j int) bool {
-		iBeatsJ := poker.Beats(outcomes[i].Level, outcomes[j].Level)
-		jBeatsI := poker.Beats(outcomes[j].Level, outcomes[i].Level)
-		if iBeatsJ && !jBeatsI {
-			return true
-		}
-		if jBeatsI && !iBeatsJ {
-			return false
-		}
-		return outcomes[i].Player < outcomes[j].Player
-	})
+	Player         int
+	Level          poker.HandLevel
+	Cards          []poker.Card
+	Won            bool
+	PotFractionWon float64
 }
 
 func Deal(p *poker.Pack, players int) (onTable []poker.Card, playerCards [][]poker.Card) {
@@ -88,18 +75,24 @@ func Deal(p *poker.Pack, players int) (onTable []poker.Card, playerCards [][]pok
 // Player numbers are in ascending order of playerCards entries, starting with 1.
 func DealOutcomes(onTable []poker.Card, playerCards [][]poker.Card) []PlayerOutcome {
 	outcomes := make([]PlayerOutcome, len(playerCards))
+	var bestLevel poker.HandLevel
 	for playerIdx, hand := range playerCards {
 		level, cards := classify(onTable, hand)
-		outcomes[playerIdx] = PlayerOutcome{playerIdx + 1, level, cards}
+		outcomes[playerIdx] = PlayerOutcome{playerIdx + 1, level, cards, false, 0}
+		if playerIdx == 0 || poker.Beats(level, bestLevel) {
+			bestLevel = level
+		}
 	}
-	sortOutcomes(outcomes)
-	return outcomes
-}
 
-func calcPotFraction(won bool, potSplit int) float64 {
-	if won {
-		return 1.0 / float64(potSplit)
-	} else {
-		return 0
+	winners := make([]int, 0, len(outcomes))
+	for i, outcome := range outcomes {
+		if !poker.Beats(bestLevel, outcome.Level) {
+			winners = append(winners, i)
+		}
 	}
+	for _, i := range winners {
+		outcomes[i].Won = true
+		outcomes[i].PotFractionWon = 1.0 / float64(len(winners))
+	}
+	return outcomes
 }
