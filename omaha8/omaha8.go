@@ -89,9 +89,10 @@ func classify(tableCards, holeCards []poker.Card) Omaha8Level {
 }
 
 type PlayerOutcome struct {
-	Player         int
-	Level          Omaha8Level
-	PotFractionWon float64
+	Player                    int
+	Level                     Omaha8Level
+	IsHighWinner, IsLowWinner bool
+	PotFractionWon            float64
 }
 
 func PlayerOutcomes(tableCards []poker.Card, playerCards [][]poker.Card) []PlayerOutcome {
@@ -117,7 +118,7 @@ func PlayerOutcomes(tableCards []poker.Card, playerCards [][]poker.Card) []Playe
 	lowQualified := lowLevelQualifies(bestLowLevel)
 	result := make([]PlayerOutcome, len(levels))
 	for i, level := range levels {
-		outcome := PlayerOutcome{i + 1, level, 0}
+		outcome := PlayerOutcome{i + 1, level, false, false, 0}
 		if !poker.Beats(bestHighLevel, level.HighLevel) {
 			highWinners = append(highWinners, i)
 		}
@@ -133,9 +134,11 @@ func PlayerOutcomes(tableCards []poker.Card, playerCards [][]poker.Card) []Playe
 		highMultiple = 1.0
 	}
 	for _, highWinnerIdx := range highWinners {
+		result[highWinnerIdx].IsHighWinner = true
 		result[highWinnerIdx].PotFractionWon += highMultiple / float64(len(highWinners))
 	}
 	for _, lowWinnerIdx := range lowWinners {
+		result[lowWinnerIdx].IsLowWinner = true
 		result[lowWinnerIdx].PotFractionWon += 0.5 / float64(len(lowWinners))
 	}
 

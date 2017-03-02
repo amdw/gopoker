@@ -28,6 +28,14 @@ import (
 	"time"
 )
 
+func printTickCell(w http.ResponseWriter, tick bool) {
+	if tick {
+		fmt.Fprintf(w, `<td class="tickcell">&#9989;</td>`)
+	} else {
+		fmt.Fprintf(w, "<td></td>")
+	}
+}
+
 func PlayOmaha8(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	players, err := getPlayers(req)
@@ -48,6 +56,7 @@ func PlayOmaha8(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, "th { text-align: center }")
 	fmt.Fprintln(w, "td.numcell { text-align: right }")
 	fmt.Fprintln(w, ".nothing { color: lightgray }")
+	fmt.Fprintln(w, "td.tickcell { text-align: center }")
 	fmt.Fprintln(w, "</style>")
 	fmt.Fprintln(w, "</head>")
 	fmt.Fprintln(w, "<body>")
@@ -76,18 +85,20 @@ func PlayOmaha8(w http.ResponseWriter, req *http.Request) {
 
 	fmt.Fprintln(w, "<h3>Results</h3>")
 	fmt.Fprintln(w, `<table class="table table-bordered">`)
-	fmt.Fprintln(w, `<tr><th rowspan="2">Player</th><th colspan="2">High</th><th colspan="2">Low</th><th rowspan="2">Winnings</th></tr>`)
-	fmt.Fprintln(w, `<tr><th>Hand</th><th>Cards</th><th>Hand</th><th>Cards</th></tr>`)
+	fmt.Fprintln(w, `<tr><th rowspan="2">Player</th><th colspan="3">High</th><th colspan="3">Low</th><th rowspan="2">Winnings</th></tr>`)
+	fmt.Fprintln(w, `<tr><th>Hand</th><th>Cards</th><th>Win?</th><th>Hand</th><th>Cards</th><th>Win?</th></tr>`)
 
 	for _, outcome := range playerOutcomes {
 		fmt.Fprintln(w, "<tr>")
 		fmt.Fprintf(w, `<td>%v</td>`, outcome.Player)
 		fmt.Fprintf(w, `<td>%v</td><td>%v</td>`, outcome.Level.HighLevel.PrettyPrint(), formatCards(outcome.Level.HighHand))
+		printTickCell(w, outcome.IsHighWinner)
 		if outcome.Level.LowLevelQualifies {
 			fmt.Fprintf(w, `<td>%v</td><td>%v</td>`, outcome.Level.LowLevel.PrettyPrint(), formatCards(outcome.Level.LowHand))
 		} else {
 			fmt.Fprintf(w, `<td class="nothing">None</td><td class="nothing">None</td>`)
 		}
+		printTickCell(w, outcome.IsLowWinner)
 		fracClass := ""
 		if outcome.PotFractionWon == 0 {
 			fracClass = " nothing"
