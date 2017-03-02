@@ -30,7 +30,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 )
 
@@ -58,64 +57,6 @@ func duplicateCheck(tableCards, yourCards []poker.Card) (ok bool, dupeCard poker
 		}
 	}
 	return true, poker.Card{}
-}
-
-type simulationParams struct {
-	tableCards, yourCards []poker.Card
-	handsToPlay           int
-	forceComputation      bool
-}
-
-func getSimulationParams(req *http.Request) (params simulationParams, err error) {
-	params = simulationParams{[]poker.Card{}, []poker.Card{}, 10000, false}
-
-	if forceStrs, ok := req.Form[forceComputeKey]; ok && len(forceStrs) == 1 && strings.EqualFold(forceStrs[0], "true") {
-		params.forceComputation = true
-	}
-
-	extractCards := func(key string) ([]poker.Card, error) {
-		cards := []poker.Card{}
-		if cardsStrs, ok := req.Form[key]; ok && len(cardsStrs) > 0 && len(cardsStrs[0]) > 0 {
-			cardsSplit := strings.Split(strings.Replace(cardsStrs[0], " ", "", -1), ",")
-			cards = make([]poker.Card, len(cardsSplit))
-			for i, cstr := range cardsSplit {
-				card, err := poker.MakeCard(cstr)
-				if err != nil {
-					return cards, errors.New(fmt.Sprintf("Illegally formatted card %q", cstr))
-				}
-				cards[i] = card
-			}
-		}
-		return cards, nil
-	}
-	params.yourCards, err = extractCards(yourCardsKey)
-	if err != nil {
-		return params, err
-	}
-	if len(params.yourCards) > 2 {
-		return params, errors.New(fmt.Sprintf("Maximum of 2 player cards allowed, found %v", len(params.yourCards)))
-	}
-	params.tableCards, err = extractCards(tableCardsKey)
-	if err != nil {
-		return params, err
-	}
-	if len(params.tableCards) > 5 {
-		return params, errors.New(fmt.Sprintf("Maximum of 5 table cards allowed, found %v", len(params.tableCards)))
-	}
-	// Check for duplicate cards
-	if ok, dupeCard := duplicateCheck(params.tableCards, params.yourCards); !ok {
-		return params, errors.New(fmt.Sprintf("Found duplicate card %v in specification", dupeCard))
-	}
-
-	if handsToPlayStrs, ok := req.Form[simCountKey]; ok && len(handsToPlayStrs) > 0 {
-		handsToPlayParsed, err := strconv.ParseInt(handsToPlayStrs[0], 10, 32)
-		if err != nil {
-			return params, errors.New(fmt.Sprintf("Could not parse simcount: %v", err.Error()))
-		}
-		params.handsToPlay = int(handsToPlayParsed)
-	}
-
-	return params, nil
 }
 
 func printResultGraph(w http.ResponseWriter, title string, handNames []string, series []map[string]interface{}, id string) {
@@ -346,17 +287,13 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 		defer footFile.Close()
 		defer jsFile.Close()
 
-		players, err := getPlayers(req)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Could not get player count: %v", err), http.StatusBadRequest)
-			return
-		}
-
 		params, err := getSimulationParams(req)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Could not get simulation parameters: %v", err), http.StatusBadRequest)
 			return
 		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 		if !writeStaticFile(headFile, w) {
 			return
@@ -365,7 +302,7 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 		breakEvenStr := "undefined"
 
 		if len(params.tableCards) > 0 || len(params.yourCards) > 0 || params.forceComputation {
-			simulator := holdem.SimulateHoldem(params.tableCards, params.yourCards, players, params.handsToPlay)
+			simulator := holdem.SimulateHoldem(params.tableCards, params.yourCards, params.players, params.handsToPlay)
 
 			fmt.Fprintf(w, "<h2>Results</h2>")
 
@@ -389,7 +326,7 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 		}
 
 		fmt.Fprintln(w, "<script>")
-		fmt.Fprintf(w, "var initPlayerCount = %v;\n", players)
+		fmt.Fprintf(w, "var initPlayerCount = %v;\n", params.players)
 		fmt.Fprintf(w, "var initYourCards = %v;\n", cardsJson(params.yourCards))
 		fmt.Fprintf(w, "var initTableCards = %v;\n", cardsJson(params.tableCards))
 		fmt.Fprintf(w, "var initSimCount = %v;\n", params.handsToPlay)

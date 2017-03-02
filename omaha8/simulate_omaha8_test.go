@@ -22,6 +22,7 @@ package omaha8
 import (
 	"fmt"
 	"github.com/amdw/gopoker/poker"
+	"math"
 	"math/rand"
 	"testing"
 )
@@ -78,4 +79,25 @@ func TestSimulate(t *testing.T) {
 	randGen := rand.New(rand.NewSource(1234))
 	sim := SimulateOmaha8([]poker.Card{}, yourCards, players, simCount, randGen)
 	assertSimSanity(sim, players, simCount, t)
+}
+
+func TestPotOdds(t *testing.T) {
+	sim := Omaha8Simulator{}
+	sim.reset(2, 2)
+	randGen := rand.New(rand.NewSource(1234))
+	highWins := Omaha8Level{hl("StraightFlush", "A"), hl("HighCard", "8", "7", "6", "5", "4"),
+		h("AS", "KS", "QS", "JS", "10S"), h("8C", "7D", "6S", "5H", "4C"), true}
+	lowWins := Omaha8Level{hl("TwoPair", "A", "K", "Q"), hl("HighCard", "6", "4", "3", "2", "A"),
+		h("AS", "AC", "KS", "KC", "QH"), h("6D", "4D", "3D", "2C", "AD"), true}
+	outcome1 := PlayerOutcome{1, highWins, true, false, 0.5, 0.0}
+	outcome2 := PlayerOutcome{2, lowWins, false, true, 0.0, 0.5}
+	sim.processHand([]PlayerOutcome{outcome1, outcome2}, randGen)
+	outcome1.Player = 2
+	outcome2.Player = 1
+	sim.processHand([]PlayerOutcome{outcome2, outcome1}, randGen)
+
+	breakEven := sim.PotOddsBreakEven()
+	if math.Abs(breakEven-1.0) > 1e-6 {
+		t.Errorf("Expected even pot odds, found %v", breakEven)
+	}
 }

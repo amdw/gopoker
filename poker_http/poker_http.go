@@ -39,6 +39,7 @@ func Menu(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, "</ul></li>")
 	fmt.Fprintln(w, "<li>Omaha/8<ul>")
 	fmt.Fprintln(w, `<li><a href="/omaha8/play">Play</a></li>`)
+	fmt.Fprintln(w, `<li><a href="/omaha8/simulate">Simulate</a></li>`)
 	fmt.Fprintln(w, "</ul></li>")
 	fmt.Fprintln(w, "</ul></body></html>")
 }

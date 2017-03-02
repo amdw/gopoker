@@ -105,6 +105,10 @@ func TestHoldemSim(t *testing.T) {
 		if rec.Code != 200 {
 			t.Errorf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
 		}
+		contentType := rec.Result().Header["Content-Type"]
+		if !reflect.DeepEqual([]string{"text/html; charset=utf-8"}, contentType) {
+			t.Errorf("Expected HTML response, got %v: %v", contentType, rec.Body.String())
+		}
 	}
 }
 
@@ -209,5 +213,24 @@ func TestHoldemBadStartingCards(t *testing.T) {
 	SimulateStartingCards(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("Expected status %v, got %v: %v", http.StatusBadRequest, rec.Code, rec.Body.String())
+	}
+}
+
+func TestOmaha8Simulation(t *testing.T) {
+	dir := setupSimStaticAssets(t)
+	defer os.RemoveAll(dir)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", fmt.Sprintf("%v/omaha8/simulate", baseUrl), nil)
+	if err != nil {
+		t.Fatalf("Could not generate HTTP request: %v", err)
+	}
+	SimulateOmaha8(rec, req)
+	if rec.Code != 200 {
+		t.Errorf("Expected HTTP OK, got %v: %v", rec.Code, rec.Body.String())
+	}
+	contentType := rec.Result().Header["Content-Type"]
+	if !reflect.DeepEqual([]string{"text/html; charset=utf-8"}, contentType) {
+		t.Errorf("Expected HTML response, found %v: %v", contentType, rec.Body.String())
 	}
 }

@@ -34,8 +34,20 @@ func (s *Omaha8Simulator) reset(players, handsToPlay int) {
 	s.LowSimulator.reset(handsToPlay)
 }
 
+func (s *Omaha8Simulator) processHand(playerOutcomes []PlayerOutcome, randGen *rand.Rand) {
+	randomOpponentIdx := 1 + randGen.Intn(len(playerOutcomes)-1)
+	highOutcome := calcHighOutcome(playerOutcomes, randomOpponentIdx)
+	lowOutcome := calcLowOutcome(playerOutcomes, randomOpponentIdx)
+	s.HighSimulator.ProcessHand(highOutcome)
+	s.LowSimulator.processHand(lowOutcome)
+}
+
 func (s *Omaha8Simulator) PotsWon() float64 {
 	return s.HighSimulator.PotsWon + s.LowSimulator.PotsWon
+}
+
+func (s *Omaha8Simulator) PotOddsBreakEven() float64 {
+	return poker.PotOddsBreakEven(s.PotsWon(), s.HighSimulator.HandCount)
 }
 
 // Over time we can expand this to track the low-hand class counts etc
@@ -67,11 +79,7 @@ func SimulateOmaha8(tableCards, yourCards []poker.Card, players, handsToPlay int
 		shuffleFixing(&p, tableCards, yourCards, randGen)
 		tableCards, playerCards := Deal(&p, players)
 		playerOutcomes := PlayerOutcomes(tableCards, playerCards)
-		randomOpponentIdx := 1 + randGen.Intn(len(playerOutcomes)-1)
-		highOutcome := calcHighOutcome(playerOutcomes, randomOpponentIdx)
-		lowOutcome := calcLowOutcome(playerOutcomes, randomOpponentIdx)
-		sim.HighSimulator.ProcessHand(highOutcome)
-		sim.LowSimulator.processHand(lowOutcome)
+		sim.processHand(playerOutcomes, randGen)
 	}
 
 	return &sim
