@@ -73,10 +73,10 @@ func main() {
 	log.Printf("Listening on port %v...\n", port)
 
 	http.HandleFunc("/", poker_http.Menu)
-	http.HandleFunc("/play", poker_http.PlayHoldem)
-	http.HandleFunc("/simulate", poker_http.SimulateHoldem(staticBaseDir))
-	http.HandleFunc("/startingcards", poker_http.StartingCards(staticBaseDir))
-	http.HandleFunc("/startingcards/sim", poker_http.SimulateStartingCards)
+	http.HandleFunc("/holdem/play", poker_http.PlayHoldem)
+	http.HandleFunc("/holdem/simulate", poker_http.SimulateHoldem(staticBaseDir))
+	http.HandleFunc("/holdem/startingcards", poker_http.StartingCards(staticBaseDir))
+	http.HandleFunc("/holdem/startingcards/sim", poker_http.SimulateStartingCards)
 	err = http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

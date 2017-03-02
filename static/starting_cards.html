@@ -73,7 +73,7 @@ app.controller('StartingCardsController', function($scope, $http) {
     };
 
     $scope.simulateOne = function(rank1, rank2, samesuit) {
-        var url = "/startingcards/sim?rank1=" + rank1 + "&rank2=" + rank2 + "&samesuit=" + samesuit + "&players=" + $scope.players + "&handstoplay=" + $scope.handsToPlay;
+        var url = "/holdem/startingcards/sim?rank1=" + rank1 + "&rank2=" + rank2 + "&samesuit=" + samesuit + "&players=" + $scope.players + "&handstoplay=" + $scope.handsToPlay;
         $http.get(url).then(function (response) {
             $scope.onResult(rank1, rank2, samesuit, response.data);
         }, function (response, status) {

@@ -194,6 +194,6 @@ app.controller('simulatorController', function($scope, $window, $sce) {
         }
         parts.push("simcount=" + $scope.simulationCount);
         parts.push("compute=true");
-        $window.location.href = "/simulate?" + parts.join("&");
+        $window.location.href = "/holdem/simulate?" + parts.join("&");
     };
 });

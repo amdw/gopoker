@@ -35,9 +35,9 @@ import (
 
 const baseUrl = "http://example.com"
 
-func TestGame(t *testing.T) {
+func TestPlayHoldem(t *testing.T) {
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", fmt.Sprintf("%v/play", baseUrl), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%v/holdem/play", baseUrl), nil)
 	if err != nil {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
@@ -66,13 +66,13 @@ func setupSimStaticAssets(t *testing.T) string {
 	return dir
 }
 
-func TestSim(t *testing.T) {
+func TestHoldemSim(t *testing.T) {
 	dir := setupSimStaticAssets(t)
 	defer os.RemoveAll(dir)
 
 	urls := []string{
-		fmt.Sprintf("%v/simulate?compute=false", baseUrl),
-		fmt.Sprintf("%v/simulate?compute=true", baseUrl),
+		fmt.Sprintf("%v/holdem/simulate?compute=false", baseUrl),
+		fmt.Sprintf("%v/holdem/simulate?compute=true", baseUrl),
 	}
 	for _, url := range urls {
 		rec := httptest.NewRecorder()
@@ -87,7 +87,7 @@ func TestSim(t *testing.T) {
 	}
 }
 
-func TestSimInputValidation(t *testing.T) {
+func TestHoldemSimInputValidation(t *testing.T) {
 	dir := setupSimStaticAssets(t)
 	defer os.RemoveAll(dir)
 
@@ -105,7 +105,7 @@ func TestSimInputValidation(t *testing.T) {
 
 	for query, expectedError := range tests {
 		rec := httptest.NewRecorder()
-		url := fmt.Sprintf("%v/simulate?%v", baseUrl, query)
+		url := fmt.Sprintf("%v/holdem/simulate?%v", baseUrl, query)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			t.Fatalf("Could not generate HTTP request: %v", err)
@@ -120,9 +120,9 @@ func TestSimInputValidation(t *testing.T) {
 	}
 }
 
-func TestStartingCardsHome(t *testing.T) {
+func TestHoldemStartingCardsHome(t *testing.T) {
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", fmt.Sprintf("%v/startingcards", baseUrl), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%v/holdem/startingcards", baseUrl), nil)
 	if err != nil {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
@@ -145,11 +145,11 @@ func TestStartingCardsHome(t *testing.T) {
 	}
 }
 
-func TestStartingCardsExecute(t *testing.T) {
+func TestHoldemStartingCardsExecute(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handCount := 12345
 	players := 8
-	req, err := http.NewRequest("GET", fmt.Sprintf("%v/startingcards/sim?rank1=10&rank2=Q&samesuit=false&handstoplay=%v&players=%v", baseUrl, handCount, players), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%v/holdem/startingcards/sim?rank1=10&rank2=Q&samesuit=false&handstoplay=%v&players=%v", baseUrl, handCount, players), nil)
 	if err != nil {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
@@ -167,10 +167,10 @@ func TestStartingCardsExecute(t *testing.T) {
 	}
 }
 
-func TestBadStartingCards(t *testing.T) {
+func TestHoldemBadStartingCards(t *testing.T) {
 	// Can't be both same rank and same suit
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", fmt.Sprintf("%v/startingcards/sim?rank1=A&rank2=A&samesuit=true", baseUrl), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%v/holdem/startingcards/sim?rank1=A&rank2=A&samesuit=true", baseUrl), nil)
 	if err != nil {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
@@ -181,7 +181,7 @@ func TestBadStartingCards(t *testing.T) {
 
 	// Bad rank
 	rec = httptest.NewRecorder()
-	req, err = http.NewRequest("GET", fmt.Sprintf("%v/startingcards/sim?rank1=A&rank2=Z&samesuit=false", baseUrl), nil)
+	req, err = http.NewRequest("GET", fmt.Sprintf("%v/holdem/startingcards/sim?rank1=A&rank2=Z&samesuit=false", baseUrl), nil)
 	if err != nil {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
