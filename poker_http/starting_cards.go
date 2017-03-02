@@ -76,7 +76,7 @@ type SimParams struct {
 	HandsToPlay  int
 }
 
-func (params SimParams) RunSimulation() *holdem.Simulator {
+func (params SimParams) RunSimulation() *poker.Simulator {
 	return params.StartingPair.RunSimulation(params.Players, params.HandsToPlay)
 }
 

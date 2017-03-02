@@ -32,7 +32,7 @@ func assertPotsWonSanity(winCount int, potsWon float64, description string, t *t
 	}
 }
 
-func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
+func assertSimSanity(sim *poker.Simulator, players, simulations int, t *testing.T) {
 	if sim.Players != players {
 		t.Errorf("Expected %v players, found %v", players, sim.Players)
 	}
@@ -118,18 +118,16 @@ func assertSimSanity(sim *Simulator, players, simulations int, t *testing.T) {
 }
 
 func TestSimSanity(t *testing.T) {
-	sim := Simulator{}
 	players := 5
 	simulations := 10000
-	sim.SimulateHoldem([]poker.Card{}, []poker.Card{}, players, simulations)
-	assertSimSanity(&sim, players, simulations, t)
+	sim := SimulateHoldem([]poker.Card{}, []poker.Card{}, players, simulations)
+	assertSimSanity(sim, players, simulations, t)
 }
 
 func TestTwoPlayers(t *testing.T) {
-	sim := Simulator{}
 	simulations := 10000
-	sim.SimulateHoldem([]poker.Card{}, []poker.Card{}, 2, simulations)
-	assertSimSanity(&sim, 2, simulations, t)
+	sim := SimulateHoldem([]poker.Card{}, []poker.Card{}, 2, simulations)
+	assertSimSanity(sim, 2, simulations, t)
 	// We can make some extra assertions here, as it's impossible for a pot to be split among opponents
 	totalPotsWon := sim.PotsWon + sim.BestOpponentPotsWon
 	if math.Abs(totalPotsWon-float64(simulations)) > 1e-6 {
@@ -141,49 +139,13 @@ func TestTwoPlayers(t *testing.T) {
 	}
 }
 
-func sp(r1s, r2s string, suited bool) StartingPair {
-	r1, err := poker.MakeRank(r1s)
-	if err != nil {
-		panic(fmt.Sprintf("Cannot make rank from %v", r1s))
-	}
-	r2, err := poker.MakeRank(r2s)
-	if err != nil {
-		panic(fmt.Sprintf("Cannot make rank from %v", r2s))
-	}
-	return StartingPair{r1, r2, suited}
-}
-
-func TestPairs(t *testing.T) {
-	pairs := []StartingPair{sp("K", "Q", false), sp("K", "Q", true), sp("K", "K", false)}
-	players := 6
-	simCount := 1000
-	for _, pair := range pairs {
-		sim := pair.RunSimulation(players, simCount)
-		assertSimSanity(sim, players, simCount, t)
-	}
-}
-
-func TestPotOdds(t *testing.T) {
-	sim := Simulator{}
-	sim.HandCount = 10000
-	tests := map[float64]float64{0.0: 0.0, float64(sim.HandCount) / 2.0: 1.0, float64(sim.HandCount): math.Inf(1)}
-	for potsWon, expected := range tests {
-		sim.PotsWon = potsWon
-		breakEven := sim.PotOddsBreakEven()
-		if breakEven != expected {
-			t.Errorf("Expected pot odds break even %v, found %v", expected, breakEven)
-		}
-	}
-}
-
 func TestEnumeration(t *testing.T) {
-	sim := Simulator{}
 	yourCards := h("9D", "7C")
 	tableCards := h("KS", "7D", "AH", "8C", "8D")
-	sim.SimulateHoldem(tableCards, yourCards, 2, 10000)
+	sim := SimulateHoldem(tableCards, yourCards, 2, 10000)
 
 	// Should only do 45C2 = 990 simulations, one for each possible hand our opponent holds
-	assertSimSanity(&sim, 2, 990, t)
+	assertSimSanity(sim, 2, 990, t)
 
 	if sim.OurClassCounts[poker.TwoPair] != 990 {
 		t.Errorf("We got two pair but got %v not 990!", sim.OurClassCounts[poker.TwoPair])
@@ -213,5 +175,27 @@ func TestEnumeration(t *testing.T) {
 	// And 990 minus all the other scenarios gives 544
 	if sim.BestOpponentClassCounts[poker.OnePair] != 544 {
 		t.Errorf("Opponent has 544 ways to make one pair but found %v", sim.BestOpponentClassCounts[poker.OnePair])
+	}
+}
+
+func sp(r1s, r2s string, suited bool) StartingPair {
+	r1, err := poker.MakeRank(r1s)
+	if err != nil {
+		panic(fmt.Sprintf("Cannot make rank from %v", r1s))
+	}
+	r2, err := poker.MakeRank(r2s)
+	if err != nil {
+		panic(fmt.Sprintf("Cannot make rank from %v", r2s))
+	}
+	return StartingPair{r1, r2, suited}
+}
+
+func TestPairs(t *testing.T) {
+	pairs := []StartingPair{sp("K", "Q", false), sp("K", "Q", true), sp("K", "K", false)}
+	players := 6
+	simCount := 1000
+	for _, pair := range pairs {
+		sim := pair.RunSimulation(players, simCount)
+		assertSimSanity(sim, players, simCount, t)
 	}
 }

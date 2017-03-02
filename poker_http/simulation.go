@@ -136,7 +136,7 @@ func printResultGraph(w http.ResponseWriter, title string, handNames []string, s
 	fmt.Fprintln(w, `</script>`)
 }
 
-func makeYourSeries(simulator *holdem.Simulator) ([]string, []map[string]interface{}) {
+func makeYourSeries(simulator *poker.Simulator) ([]string, []map[string]interface{}) {
 	handNames := make([]string, len(simulator.ClassWinCounts))
 	soleWinData := make([]float64, len(handNames))
 	jointWinData := make([]float64, len(handNames))
@@ -161,7 +161,7 @@ func makeYourSeries(simulator *holdem.Simulator) ([]string, []map[string]interfa
 	return handNames, series
 }
 
-func makeBestOppSeries(simulator *holdem.Simulator) []map[string]interface{} {
+func makeBestOppSeries(simulator *poker.Simulator) []map[string]interface{} {
 	winData := make([]float64, len(simulator.ClassBestOppWinCounts))
 	lossData := make([]float64, len(winData))
 	for class := range simulator.ClassBestOppWinCounts {
@@ -180,7 +180,7 @@ func makeBestOppSeries(simulator *holdem.Simulator) []map[string]interface{} {
 	return series
 }
 
-func printResultGraphs(w http.ResponseWriter, simulator *holdem.Simulator) {
+func printResultGraphs(w http.ResponseWriter, simulator *poker.Simulator) {
 	fmt.Fprintln(w, `<div class="row">`)
 
 	fmt.Fprintln(w, `<div class="col-md-6">`)
@@ -211,7 +211,7 @@ type playerStats struct {
 	BestHand      string
 }
 
-func printResultTable(w http.ResponseWriter, simulator *holdem.Simulator) {
+func printResultTable(w http.ResponseWriter, simulator *poker.Simulator) {
 	cssClass := func(isNum, isZero bool) string {
 		classes := []string{}
 		if isNum {
@@ -365,8 +365,7 @@ func SimulateHoldem(staticBaseDir string) func(http.ResponseWriter, *http.Reques
 		breakEvenStr := "undefined"
 
 		if len(params.tableCards) > 0 || len(params.yourCards) > 0 || params.forceComputation {
-			simulator := &holdem.Simulator{}
-			simulator.SimulateHoldem(params.tableCards, params.yourCards, players, params.handsToPlay)
+			simulator := holdem.SimulateHoldem(params.tableCards, params.yourCards, players, params.handsToPlay)
 
 			fmt.Fprintf(w, "<h2>Results</h2>")
 

@@ -22,7 +22,7 @@ package poker_http
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/amdw/gopoker/holdem"
+	"github.com/amdw/gopoker/poker"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -178,7 +178,7 @@ func TestHoldemStartingCardsExecute(t *testing.T) {
 	if rec.Code != 200 {
 		t.Fatalf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
 	}
-	sim := holdem.Simulator{}
+	sim := poker.Simulator{}
 	json.Unmarshal(rec.Body.Bytes(), &sim)
 	if sim.HandCount != handCount {
 		t.Errorf("Expected hand count %v, found %v", handCount, sim.HandCount)

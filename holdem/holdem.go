@@ -128,13 +128,6 @@ func DealOutcomes(onTable []poker.Card, playerCards [][]poker.Card) []PlayerOutc
 	return outcomes
 }
 
-type HandOutcome struct {
-	Won, OpponentWon, RandomOpponentWon                      bool
-	PotFractionWon                                           float64
-	BestOpponentPotFractionWon, RandomOpponentPotFractionWon float64
-	OurLevel, BestOpponentLevel, RandomOpponentLevel         poker.HandLevel
-}
-
 func calcPotFraction(won bool, potSplit int) float64 {
 	if won {
 		return 1.0 / float64(potSplit)
@@ -143,7 +136,7 @@ func calcPotFraction(won bool, potSplit int) float64 {
 	}
 }
 
-func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) *HandOutcome {
+func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) *poker.HandOutcome {
 	// This works even if player 1 was equal first, since equal hands are sorted by player
 	won := outcomes[0].Player == 1
 
@@ -174,14 +167,14 @@ func calcHandOutcome(outcomes []PlayerOutcome, randGen *rand.Rand) *HandOutcome 
 	bestOpponentPotFraction := calcPotFraction(bestOpponentWon, potSplit)
 	randomOpponentPotFraction := calcPotFraction(randomOpponentWon, potSplit)
 
-	return &HandOutcome{won, bestOpponentWon, randomOpponentWon,
+	return &poker.HandOutcome{won, bestOpponentWon, randomOpponentWon,
 		potFractionWon, bestOpponentPotFraction, randomOpponentPotFraction,
 		ourOutcome.Level, opponentOutcomes[0].Level, randomOpponentLevel}
 }
 
 // Play out one hand of Texas Hold'em and return whether or not player 1 won,
 // plus player 1's hand level, plus the best hand level of any of player 1's opponents.
-func SimulateOneHoldemHand(p *poker.Pack, players int, randGen *rand.Rand) *HandOutcome {
+func SimulateOneHoldemHand(p *poker.Pack, players int, randGen *rand.Rand) *poker.HandOutcome {
 	onTable, playerCards := Deal(p, players)
 	outcomes := DealOutcomes(onTable, playerCards)
 	return calcHandOutcome(outcomes, randGen)
