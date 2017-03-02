@@ -52,6 +52,7 @@ var gameTests = []GameTest{
 	GameTest{h("AH", "3H"), h("2H", "4H", "5H", "2C", "3C"), hl("StraightFlush", "5"), h("AH", "2H", "3H", "4H", "5H")},
 	GameTest{h("10S", "JS"), h("10C", "QD", "10D", "10H", "2S"), hl("FourOfAKind", "10", "Q"), h("10S", "10C", "10D", "10H", "QD")},
 	GameTest{h("10S", "10C"), h("10D", "10H", "JD", "QD", "KD"), hl("FourOfAKind", "10", "K"), h("10S", "10C", "10D", "10H", "KD")},
+	GameTest{h("5C", "10S"), h("5S", "5D", "5H", "AS", "KC"), hl("FourOfAKind", "5", "A"), h("5C", "5S", "5D", "5H", "AS")},
 	GameTest{h("2S", "2H"), h("3D", "3H", "3C", "QD", "KS"), hl("FullHouse", "3", "2"), h("2S", "2H", "3H", "3C", "3D")},
 	GameTest{h("2S", "3S"), h("4C", "4S", "2D", "2H", "3C"), hl("FullHouse", "2", "4"), h("2S", "2D", "2H", "4C", "4S")},
 	GameTest{h("6H", "8H"), h("9H", "10H", "2H", "3S", "7C"), hl("Flush", "10", "9", "8", "6", "2"), h("10H", "9H", "8H", "6H", "2H")},

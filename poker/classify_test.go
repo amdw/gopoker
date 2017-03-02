@@ -71,6 +71,7 @@ var aceToFiveLowClassTests = []classificationTest{
 	{h("AD", "KS", "KD", "AC", "AH"), hl("FullHouse", "A", "K")},
 	{h("JS", "2D", "JC", "JH", "JD"), hl("FourOfAKind", "J", "2")},
 	{h("AS", "2D", "AC", "AH", "AD"), hl("FourOfAKind", "A", "2")},
+	{h("5S", "5C", "5H", "5D", "AS"), hl("FourOfAKind", "5", "A")},
 }
 
 func TestAceToFiveLowClassification(t *testing.T) {

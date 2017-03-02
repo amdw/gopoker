@@ -180,8 +180,8 @@ func classifyStraightFlush(cards []Card) (hl HandLevel, ok bool) {
 }
 
 // See if "four of a kind" can be formed from this set of cards. If so, return the level of the best such hand; if not, indicate invalid.
-func classifyFourOfAKind(cards []Card, countsByRank []int, rankOrder []Rank) (hl HandLevel, ok bool) {
-	for _, r := range rankOrder {
+func classifyFourOfAKind(cards []Card, countsByRank []int) (hl HandLevel, ok bool) {
+	for _, r := range ranksDesc {
 		if countsByRank[r] < 4 {
 			continue
 		}
@@ -345,7 +345,7 @@ func ClassifyHand(cards []Card) HandLevel {
 	if result, ok := classifyStraightFlush(cards); ok {
 		return result
 	}
-	if result, ok := classifyFourOfAKind(cards, countsByRank, ranksDesc); ok {
+	if result, ok := classifyFourOfAKind(cards, countsByRank); ok {
 		return result
 	}
 	if result, ok := classifyFullHouse(cards, countsByRank); ok {
@@ -378,7 +378,7 @@ func ClassifyAceToFiveLow(cards []Card) HandLevel {
 	SortCards(cards, true)
 
 	countsByRank := rankCounts(cards)
-	if result, ok := classifyFourOfAKind(cards, countsByRank, ranksDescAceLow); ok {
+	if result, ok := classifyFourOfAKind(cards, countsByRank); ok {
 		return result
 	}
 	if result, ok := classifyFullHouse(cards, countsByRank); ok {

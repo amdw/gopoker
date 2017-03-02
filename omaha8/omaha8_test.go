@@ -79,6 +79,7 @@ var classifyTests = []classifyTest{
 	{board, h("4H", "6H", "KS", "KD"), hl("Straight", "8"), hl("HighCard", "7", "6", "5", "4", "2"), true},
 	{board, h("AD", "3D", "6D", "9H"), hl("Straight", "10"), hl("HighCard", "7", "5", "3", "2", "A"), true},
 	{h("6S", "7S", "8C", "JD", "QH"), h("AS", "3S", "KS", "KC"), hl("OnePair", "K", "Q", "J", "8"), hl("HighCard", "8", "7", "6", "3", "A"), true},
+	{h("AS", "2S", "3S", "5S", "5C"), h("5D", "5H", "6C", "7D"), hl("FourOfAKind", "5", "A"), hl("HighCard", "6", "5", "3", "2", "A"), true},
 }
 
 func TestClassify(t *testing.T) {
