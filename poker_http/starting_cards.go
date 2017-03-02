@@ -46,6 +46,9 @@ func StartingCards(staticBaseDir string) func(http.ResponseWriter, *http.Request
 			return
 		}
 		defer file.Close()
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
 		_, err = io.Copy(w, file)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Could not write %v: %v", path, err), http.StatusInternalServerError)
@@ -136,5 +139,6 @@ func SimulateStartingCards(w http.ResponseWriter, req *http.Request) {
 	log.Println("Simulating", simParams)
 	simulator := simParams.RunSimulation()
 	log.Println("Simulation", simParams, "complete")
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(simulator)
 }

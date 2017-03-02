@@ -36,6 +36,29 @@ import (
 
 const baseUrl = "http://example.com"
 
+func assertStatus(expectedStatus int, expectedContentType string, rec *httptest.ResponseRecorder, t *testing.T) {
+	if rec.Code != expectedStatus {
+		t.Errorf("Expected HTTP status %v, got %v: %v", expectedStatus, rec.Code, rec.Body.String())
+	}
+	contentType := rec.Result().Header["Content-Type"]
+	if !reflect.DeepEqual([]string{expectedContentType}, contentType) {
+		t.Errorf("Expected content type %v, found %v: %v", expectedContentType, contentType, rec.Body.String())
+	}
+
+}
+
+func assertOkHtml(rec *httptest.ResponseRecorder, t *testing.T) {
+	assertStatus(200, "text/html; charset=utf-8", rec, t)
+}
+
+func assertOkJson(rec *httptest.ResponseRecorder, t *testing.T) {
+	assertStatus(200, "application/json", rec, t)
+}
+
+func assertBadRequest(rec *httptest.ResponseRecorder, t *testing.T) {
+	assertStatus(http.StatusBadRequest, "text/plain; charset=utf-8", rec, t)
+}
+
 func TestPlayHoldem(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", fmt.Sprintf("%v/holdem/play", baseUrl), nil)
@@ -43,13 +66,7 @@ func TestPlayHoldem(t *testing.T) {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
 	PlayHoldem(rec, req)
-	if rec.Code != 200 {
-		t.Errorf("Got HTTP error %s", rec.Code)
-	}
-	contentType := rec.Result().Header["Content-Type"]
-	if !reflect.DeepEqual([]string{"text/html; charset=utf-8"}, contentType) {
-		t.Errorf("Expected HTML response, found %v", contentType)
-	}
+	assertOkHtml(rec, t)
 }
 
 func TestPlayHoldemBadPlayers(t *testing.T) {
@@ -59,13 +76,7 @@ func TestPlayHoldemBadPlayers(t *testing.T) {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
 	PlayHoldem(rec, req)
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("Expected HTTP status %v, got %v", http.StatusBadRequest, rec.Code)
-	}
-	contentType := rec.Result().Header["Content-Type"]
-	if !reflect.DeepEqual([]string{"text/plain; charset=utf-8"}, contentType) {
-		t.Errorf("Expected plain-text response, found %v", contentType)
-	}
+	assertBadRequest(rec, t)
 }
 
 func setupSimStaticAssets(t *testing.T) string {
@@ -102,13 +113,7 @@ func TestHoldemSim(t *testing.T) {
 			t.Fatalf("Could not generate HTTP request: %v", err)
 		}
 		SimulateHoldem(dir)(rec, req)
-		if rec.Code != 200 {
-			t.Errorf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
-		}
-		contentType := rec.Result().Header["Content-Type"]
-		if !reflect.DeepEqual([]string{"text/html; charset=utf-8"}, contentType) {
-			t.Errorf("Expected HTML response, got %v: %v", contentType, rec.Body.String())
-		}
+		assertOkHtml(rec, t)
 	}
 }
 
@@ -136,9 +141,7 @@ func TestHoldemSimInputValidation(t *testing.T) {
 			t.Fatalf("Could not generate HTTP request: %v", err)
 		}
 		SimulateHoldem(dir)(rec, req)
-		if rec.Code != 400 {
-			t.Errorf("Got HTTP code %v for %v, expected 400: %v", rec.Code, url, rec.Body.String())
-		}
+		assertBadRequest(rec, t)
 		if !strings.Contains(rec.Body.String(), expectedError) {
 			t.Errorf("Could not find expected error '%v' in response for %v: %v", expectedError, url, rec.Body.String())
 		}
@@ -165,9 +168,7 @@ func TestHoldemStartingCardsHome(t *testing.T) {
 		t.Fatalf("Could not write temp HTML file %v: %v", filename, err)
 	}
 	StartingCards(dir)(rec, req)
-	if rec.Code != 200 {
-		t.Errorf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
-	}
+	assertOkHtml(rec, t)
 }
 
 func TestHoldemStartingCardsExecute(t *testing.T) {
@@ -179,9 +180,7 @@ func TestHoldemStartingCardsExecute(t *testing.T) {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
 	SimulateStartingCards(rec, req)
-	if rec.Code != 200 {
-		t.Fatalf("Got HTTP error %v: %v", rec.Code, rec.Body.String())
-	}
+	assertOkJson(rec, t)
 	sim := poker.Simulator{}
 	json.Unmarshal(rec.Body.Bytes(), &sim)
 	if sim.HandCount != handCount {
@@ -200,9 +199,7 @@ func TestHoldemBadStartingCards(t *testing.T) {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
 	SimulateStartingCards(rec, req)
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("Expected status %v, got %v: %v", http.StatusBadRequest, rec.Code, rec.Body.String())
-	}
+	assertBadRequest(rec, t)
 
 	// Bad rank
 	rec = httptest.NewRecorder()
@@ -211,9 +208,7 @@ func TestHoldemBadStartingCards(t *testing.T) {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
 	SimulateStartingCards(rec, req)
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("Expected status %v, got %v: %v", http.StatusBadRequest, rec.Code, rec.Body.String())
-	}
+	assertBadRequest(rec, t)
 }
 
 func TestOmaha8Simulation(t *testing.T) {
@@ -226,11 +221,5 @@ func TestOmaha8Simulation(t *testing.T) {
 		t.Fatalf("Could not generate HTTP request: %v", err)
 	}
 	SimulateOmaha8(rec, req)
-	if rec.Code != 200 {
-		t.Errorf("Expected HTTP OK, got %v: %v", rec.Code, rec.Body.String())
-	}
-	contentType := rec.Result().Header["Content-Type"]
-	if !reflect.DeepEqual([]string{"text/html; charset=utf-8"}, contentType) {
-		t.Errorf("Expected HTML response, found %v: %v", contentType, rec.Body.String())
-	}
+	assertOkHtml(rec, t)
 }
