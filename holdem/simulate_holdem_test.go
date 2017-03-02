@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/amdw/gopoker/poker"
 	"math"
+	"math/rand"
 	"testing"
 )
 
@@ -175,6 +176,43 @@ func TestEnumeration(t *testing.T) {
 	// And 990 minus all the other scenarios gives 544
 	if sim.BestOpponentClassCounts[poker.OnePair] != 544 {
 		t.Errorf("Opponent has 544 ways to make one pair but found %v", sim.BestOpponentClassCounts[poker.OnePair])
+	}
+}
+
+func TestFixedShuffle(t *testing.T) {
+	pack := poker.NewPack()
+	randGen := rand.New(rand.NewSource(1234)) // Deterministic for repeatable tests
+
+	myCards := h("KS", "AC")
+	tableCards := h("10D", "2C", "AS", "4D", "6H")
+	for testNum := 0; testNum < 1000; testNum++ {
+		shuffleFixing(&pack, tableCards, myCards, randGen)
+		tCards, pCards := Deal(&pack, 5)
+		if !cardsEqual(tableCards, tCards) {
+			t.Errorf("Expected table cards %q, found %q", tableCards, tCards)
+		}
+		if !cardsEqual(myCards, pCards[0]) {
+			t.Errorf("Expected player 1 cards %q, found %q", myCards, pCards[0])
+		}
+		containsAny := func(cards, testCards []poker.Card) bool {
+			for _, c := range cards {
+				for _, tc := range testCards {
+					if c == tc {
+						return true
+					}
+				}
+			}
+			return false
+		}
+		for i := 1; i < len(pCards); i++ {
+			if containsAny(pCards[i], myCards) {
+				t.Errorf("Player %v's cards %q should not contain any of player 1's cards %q.", i+1, pCards[i], myCards)
+			}
+			if containsAny(pCards[i], tableCards) {
+				t.Errorf("Player %v's cards %q should not contain any table cards %q", i+1, pCards[i], tableCards)
+			}
+		}
+		poker.TestPackPermutation(&pack, t)
 	}
 }
 

@@ -80,6 +80,37 @@ func enumerateHoldem(s *poker.Simulator, tableCards, yourCards []poker.Card, pla
 	}
 }
 
+// Shuffle the pack, but fix certain cards in place. For use in simulations.
+// It is assumed that there are no duplicate cards in (tableCards+yourCards).
+func shuffleFixing(p *poker.Pack, tableCards, yourCards []poker.Card, randGen *rand.Rand) {
+	if len(tableCards) > 5 || len(yourCards) > 2 {
+		panic(fmt.Sprintf("Maximum of 5 table cards and 2 hole cards supported, found %v and %v", len(tableCards), len(yourCards)))
+	}
+
+	indexOf := func(cards [52]poker.Card, card poker.Card) int {
+		result := -1
+		for i, c := range cards {
+			if c == card {
+				result = i
+				break
+			}
+		}
+		return result
+	}
+
+	// Just shuffle the pack and then swap the fixed cards into place from wherever they are in the deck
+	p.Shuffle(randGen)
+	for i := 0; i < len(tableCards); i++ {
+		swapIdx := indexOf(p.Cards, tableCards[i])
+		p.Cards[i], p.Cards[swapIdx] = p.Cards[swapIdx], p.Cards[i]
+	}
+	for i := 0; i < len(yourCards); i++ {
+		swapIdx := indexOf(p.Cards, yourCards[i])
+		targetIdx := i + 5
+		p.Cards[targetIdx], p.Cards[swapIdx] = p.Cards[swapIdx], p.Cards[targetIdx]
+	}
+}
+
 type StartingPair struct {
 	Rank1, Rank2 poker.Rank
 	SameSuit     bool
