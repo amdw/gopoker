@@ -4,9 +4,10 @@ This project comprises some miscellaneous poker-related functions written for fu
 
 There is an HTTP front end, which so far provides the following features:
 
-* "Play", which simulates a single hand of Texas Hold'em with a given number of players and displays the ranking of the hands
-* "Simulate", which allows you to specify a number of known cards (both on the table and in your hand) and simulates a large number of hands of Texas Hold'em to see how likely various possible outcomes are. This gives an estimate of the conditional probabilities of the various game outcomes, given the cards that you know. (Poker strategy cannot be reduced to an algorithm purely based on these probabilities - you have to take your opponents' playing styles and betting behaviour into account, which is what makes poker an interesting game - but it is still very helpful to have a good sense of them.)
-* "Starting cards", which compares the win probabilities from holding different starting pairs in Texas Hold'em. This information is useful when considering which hands to play and which to fold pre-flop. Simulations are done concurrently and inserted into the page in real-time using Angular.JS.
+* "Play Holdem", which simulates a single hand of Texas Hold'em with a given number of players and displays the ranking of the hands
+* "Simulate Holdem", which allows you to specify a number of known cards (both on the table and in your hand) and simulates a large number of hands of Texas Hold'em to see how likely various possible outcomes are. This gives an estimate of the conditional probabilities of the various game outcomes, given the cards that you know. (Poker strategy cannot be reduced to an algorithm purely based on these probabilities - you have to take your opponents' playing styles and betting behaviour into account, which is what makes poker an interesting game - but it is still very helpful to have a good sense of them.)
+* "Starting Holdem cards", which compares the win probabilities from holding different starting pairs in Texas Hold'em. This information is useful when considering which hands to play and which to fold pre-flop. Simulations are done concurrently and inserted into the page in real-time using Angular.JS.
+* "Play Omaha/8", which simulates a single hand of Omaha 8-or-better with a given number of players and displays the outcome.
 
 # Installing and running locally
 

@@ -77,6 +77,7 @@ func main() {
 	http.HandleFunc("/holdem/simulate", poker_http.SimulateHoldem(staticBaseDir))
 	http.HandleFunc("/holdem/startingcards", poker_http.StartingCards(staticBaseDir))
 	http.HandleFunc("/holdem/startingcards/sim", poker_http.SimulateStartingCards)
+	http.HandleFunc("/omaha8/play", poker_http.PlayOmaha8)
 	err = http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
