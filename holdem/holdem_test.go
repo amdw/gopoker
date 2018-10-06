@@ -105,7 +105,7 @@ func TestDeal(t *testing.T) {
 		t.Errorf("Expected 5 table cards, found %v", len(tableCards))
 	}
 	if len(playerCards) != players {
-		t.Errorf("Expected %v player hands, found %v", len(playerCards))
+		t.Errorf("Expected %v player hands, found %v", players, len(playerCards))
 	}
 	dupeCheck := make(map[poker.Card]int)
 	cardDupeCheck(tableCards, dupeCheck, t)
