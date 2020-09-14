@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Andrew Medworth
+Copyright 2017, 2020 Andrew Medworth
 
 This file is part of Gopoker, a set of miscellaneous poker-related functions
 written in the Go programming language (http://golang.org).
@@ -52,6 +52,7 @@ func AllCardCombinations(pack []Card, numRequired int) [][]Card {
 	result := make([][]Card, 0, binomial(len(pack), numRequired))
 	indices := make([]int, numRequired)
 	// Standard algorithm to enumerate k-combinations
+	// Start with the first numRequired elements of the array
 	for i := 0; i < numRequired; i++ {
 		indices[i] = i
 	}
@@ -63,21 +64,24 @@ func AllCardCombinations(pack []Card, numRequired int) [][]Card {
 		}
 		result = append(result, combination)
 
-		// Advance to the next combination
-		if indices[numRequired-1] < len(pack)-1 {
-			indices[numRequired-1]++
-		} else {
-			i := numRequired - 1
-			for i >= 0 && indices[i] == i+len(pack)-numRequired {
-				i--
-			}
-			if i < 0 {
-				break
-			}
-			indices[i]++
-			for j := i + 1; j < numRequired; j++ {
-				indices[j] = indices[j-1] + 1
-			}
+		// Advance to the next combination.
+		// First, find the first index, starting from the right,
+		// that's not part of a block pointing to the end of the array.
+		i := numRequired - 1
+		for i >= 0 && indices[i] == i+len(pack)-numRequired {
+			i--
+		}
+		if i < 0 {
+			// There is no such index: all indexes are at the end of the array.
+			// We've finished.
+			break
+		}
+		// Advance that index.
+		indices[i]++
+		// Reset all indexes to the right to be the immediate successors of
+		// the index we just advanced.
+		for j := i + 1; j < numRequired; j++ {
+			indices[j] = indices[j-1] + 1
 		}
 	}
 	return result
